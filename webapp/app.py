@@ -91,27 +91,62 @@ class TushareMarketReview:
     def get_sector_daily(self, trade_date: str = None):
         if trade_date is None:
             trade_date = self.last_trade_date
+        
         try:
-            df = self.pro.ths_daily(trade_date=trade_date)
-            if df is not None and not df.empty:
-                df = df.sort_values('close', ascending=False)
-            return df
+            daily_df = self.pro.daily(trade_date=trade_date)
+            if daily_df is None or daily_df.empty:
+                return None
+            
+            stocks = self.pro.stock_basic(exchange='', list_status='L', fields='ts_code,industry')
+            if stocks is None or stocks.empty:
+                return None
+            
+            df = daily_df.merge(stocks, on='ts_code', how='left')
+            df = df[df['industry'].notna() & (df['industry'] != '')]
+            
+            sector_stats = df.groupby('industry').agg({
+                'pct_chg': 'mean',
+                'ts_code': 'count',
+                'close': 'mean'
+            }).reset_index()
+            sector_stats = sector_stats.sort_values('pct_chg', ascending=False)
+            sector_stats.rename(columns={'industry': 'name', 'pct_chg': 'change', 'ts_code': 'count'}, inplace=True)
+            
+            return sector_stats
         except Exception:
             try:
-                df = self.pro.sw_daily(trade_date=trade_date)
+                df = self.pro.ths_daily(trade_date=trade_date)
                 if df is not None and not df.empty:
                     df = df.sort_values('close', ascending=False)
                 return df
             except Exception:
-                return None
+                try:
+                    df = self.pro.sw_daily(trade_date=trade_date)
+                    if df is not None and not df.empty:
+                        df = df.sort_values('close', ascending=False)
+                    return df
+                except Exception:
+                    return None
 
     def get_limit_list(self, trade_date: str = None):
         if trade_date is None:
             trade_date = self.last_trade_date
+        
         try:
-            return self.pro.limit_list_d(trade_date=trade_date)
+            df = self.pro.limit_list_d(trade_date=trade_date)
+            return df
         except Exception:
-            return None
+            try:
+                df = self.pro.daily(trade_date=trade_date)
+                if df is None or df.empty:
+                    return None
+                df = df[df['pct_chg'] >= 9.8]
+                if df.empty:
+                    return None
+                df['limit'] = df['pct_chg'].apply(lambda x: 1)
+                return df
+            except Exception:
+                return None
 
     def get_moneyflow_industry(self, trade_date: str = None):
         if trade_date is None:
