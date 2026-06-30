@@ -29,6 +29,21 @@ ARCHIVE_FILE = os.path.join(DATA_DIR, 'market_review_archive.json')
 
 os.makedirs(DATA_DIR, exist_ok=True)
 
+
+def format_ts_code(code: str) -> str:
+    code = code.strip().upper()
+    if not code:
+        return code
+    if code.endswith('.SH') or code.endswith('.SZ'):
+        return code
+    if code.startswith('6'):
+        return f'{code}.SH'
+    elif code.startswith(('0', '3')):
+        return f'{code}.SZ'
+    elif code.startswith('8') or code.startswith('4'):
+        return f'{code}.BJ'
+    return code
+
 app = Flask(__name__)
 
 
@@ -544,17 +559,57 @@ def get_price():
     code = request.args.get('code', '').strip()
     if not code:
         return jsonify({'success': False, 'message': '请提供股票代码'})
-    
+
     cfg = get_config()
     if cfg['mock_mode'] or not TUSHARE_AVAILABLE:
         return jsonify({'success': False, 'message': '未配置Tushare Token'})
-    
+
     try:
+        code = format_ts_code(code)
         pro = ts.pro_api(cfg['tushare_token'])
         df = pro.daily(ts_code=code)
         if df is not None and not df.empty:
             return jsonify({'success': True, 'price': float(df.iloc[0]['close'])})
         return jsonify({'success': False, 'message': '未找到该股票数据'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/stock/info')
+def get_stock_info():
+    code = request.args.get('code', '').strip()
+    if not code:
+        return jsonify({'success': False, 'message': '请提供股票代码'})
+
+    cfg = get_config()
+    if cfg['mock_mode'] or not TUSHARE_AVAILABLE:
+        return jsonify({'success': False, 'message': '未配置Tushare Token'})
+
+    try:
+        code = format_ts_code(code)
+        pro = ts.pro_api(cfg['tushare_token'])
+
+        df = pro.daily(ts_code=code)
+        if df is None or df.empty:
+            return jsonify({'success': False, 'message': '未找到该股票数据'})
+
+        price = float(df.iloc[0]['close'])
+
+        stocks = pro.stock_basic(ts_code=code, fields='ts_code,name,industry')
+        if stocks is not None and not stocks.empty:
+            name = stocks.iloc[0]['name']
+            industry = stocks.iloc[0]['industry'] or ''
+        else:
+            name = ''
+            industry = ''
+
+        return jsonify({
+            'success': True,
+            'code': code,
+            'name': name,
+            'price': price,
+            'industry': industry
+        })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 

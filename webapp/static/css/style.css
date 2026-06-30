@@ -1113,3 +1113,32 @@ body {
     gap: 10px;
     margin-top: 8px;
 }
+
+.input-with-btn {
+    display: flex;
+    gap: 8px;
+}
+
+.input-with-btn input {
+    flex: 1;
+}
+
+.btn-sm {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.field-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-light);
+}
+
+.field-hint.success {
+    color: var(--success);
+}
+
+.field-hint.error {
+    color: var(--danger);
+}

@@ -378,7 +378,7 @@
             const code = document.getElementById('holding-code').value.trim();
             
             if (!name || !code) {
-                showToast('请填写股票名称和代码');
+                showToast('请填写证券名称和代码');
                 return;
             }
 
@@ -397,13 +397,47 @@
             await saveHoldings();
             renderHoldings();
             form.reset();
+            document.getElementById('code-hint').textContent = '';
+            document.getElementById('code-hint').className = 'field-hint';
             showToast('添加成功');
+        });
+
+        document.getElementById('btn-fetch-info').addEventListener('click', async () => {
+            const codeInput = document.getElementById('holding-code');
+            const nameInput = document.getElementById('holding-name');
+            const priceInput = document.getElementById('holding-current');
+            const sectorInput = document.getElementById('holding-sector');
+            const hintEl = document.getElementById('code-hint');
+            
+            let code = codeInput.value.trim();
+            if (!code) {
+                showToast('请先输入证券代码');
+                return;
+            }
+
+            hintEl.textContent = '正在识别...';
+            hintEl.className = 'field-hint';
+            
+            const data = await fetchJSON(`/api/stock/info?code=${encodeURIComponent(code)}`);
+            if (data.success) {
+                codeInput.value = data.code;
+                nameInput.value = data.name;
+                priceInput.value = data.price ? data.price.toFixed(2) : '';
+                sectorInput.value = data.industry || '';
+                hintEl.textContent = `✓ 已识别：${data.name}`;
+                hintEl.className = 'field-hint success';
+                showToast(`识别成功！${data.name} - ¥${data.price}`);
+            } else {
+                hintEl.textContent = `✗ ${data.message}`;
+                hintEl.className = 'field-hint error';
+                showToast('识别失败：' + data.message);
+            }
         });
 
         document.getElementById('btn-fetch-price').addEventListener('click', async () => {
             const code = document.getElementById('holding-code').value.trim();
             if (!code) {
-                showToast('请先输入股票代码');
+                showToast('请先输入证券代码');
                 return;
             }
             showToast('正在获取价格...');
@@ -412,7 +446,7 @@
                 document.getElementById('holding-current').value = data.price.toFixed(2);
                 showToast(`获取成功：¥${data.price.toFixed(2)}`);
             } else {
-                showToast('获取价格失败');
+                showToast('获取价格失败：' + data.message);
             }
         });
     }

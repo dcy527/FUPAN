@@ -202,12 +202,16 @@
                     <div class="card-body">
                         <form id="add-holding-form" class="form-grid">
                             <div class="form-item">
-                                <label>股票名称 *</label>
-                                <input type="text" id="holding-name" placeholder="如：上海瀚讯" required>
+                                <label>证券代码 *</label>
+                                <div class="input-with-btn">
+                                    <input type="text" id="holding-code" placeholder="如：300762（自动补全后缀）" required>
+                                    <button type="button" id="btn-fetch-info" class="btn btn-sm btn-secondary">识别</button>
+                                </div>
+                                <small class="field-hint" id="code-hint"></small>
                             </div>
                             <div class="form-item">
-                                <label>股票代码 *</label>
-                                <input type="text" id="holding-code" placeholder="如：300762.SZ" required>
+                                <label>证券名称 *</label>
+                                <input type="text" id="holding-name" placeholder="自动识别，也可手动输入" required>
                             </div>
                             <div class="form-item">
                                 <label>持仓数量</label>
@@ -235,7 +239,7 @@
                             </div>
                             <div class="form-item form-actions" style="grid-column: 1 / -1;">
                                 <button type="submit" class="btn btn-primary">添加持仓</button>
-                                <button type="button" id="btn-fetch-price" class="btn btn-secondary">自动获取当前价</button>
+                                <button type="button" id="btn-fetch-price" class="btn btn-secondary">获取当前价</button>
                             </div>
                         </form>
                     </div>
