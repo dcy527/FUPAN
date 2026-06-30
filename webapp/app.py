@@ -80,8 +80,16 @@ class TushareMarketReview:
 
     def _get_last_trade_date(self) -> str:
         try:
+            today = datetime.now().strftime('%Y%m%d')
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+            df = self.pro.daily(ts_code='000001.SZ', start_date=start_date, end_date=today)
+            if df is not None and not df.empty:
+                return df.iloc[0]['trade_date']
+        except Exception:
+            pass
+        try:
             df = self.pro.trade_cal(exchange='SSE',
-                                    start_date=(datetime.now() - timedelta(days=10)).strftime('%Y%m%d'),
+                                    start_date=(datetime.now() - timedelta(days=30)).strftime('%Y%m%d'),
                                     end_date=self.today)
             df = df[df['is_open'] == 1]
             return df.iloc[-1]['cal_date'] if not df.empty else self.today
@@ -157,6 +165,8 @@ class TushareMarketReview:
             return None
 
     def daily_review_data(self, holdings: List[Dict]) -> Dict:
+        self.last_trade_date = self._get_last_trade_date()
+        self.today = datetime.now().strftime('%Y%m%d')
         sector_df = self.get_sector_daily()
         top_sectors = []
         today_top3 = []
@@ -268,6 +278,8 @@ class TushareMarketReview:
         return results
 
     def weekly_review_data(self, holdings: List[Dict]) -> Dict:
+        self.last_trade_date = self._get_last_trade_date()
+        self.today = datetime.now().strftime('%Y%m%d')
         end_date = self.last_trade_date
         start_date = (datetime.strptime(end_date, '%Y%m%d') - timedelta(days=7)).strftime('%Y%m%d')
 
