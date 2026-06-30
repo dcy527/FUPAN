@@ -395,7 +395,6 @@
                 document.getElementById('holding-position').value = h.position || '';
                 document.getElementById('holding-current').value = h.current_price || '';
                 document.getElementById('holding-cost').value = h.cost || '';
-                document.getElementById('holding-value').value = h.value || '';
                 document.getElementById('holding-pnl').value = h.pnl || '';
                 document.getElementById('holding-stop-loss').value = h.stop_loss || '';
                 document.getElementById('holding-sector').value = h.sector || '';
@@ -440,7 +439,6 @@
                 position: parseFloat(document.getElementById('holding-position').value) || 0,
                 current_price: parseFloat(document.getElementById('holding-current').value) || 0,
                 cost: parseFloat(document.getElementById('holding-cost').value) || 0,
-                value: parseFloat(document.getElementById('holding-value').value) || 0,
                 pnl: parseFloat(document.getElementById('holding-pnl').value) || 0,
                 stop_loss: parseFloat(document.getElementById('holding-stop-loss').value) || 0,
                 sector: document.getElementById('holding-sector').value.trim(),
