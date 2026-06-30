@@ -24,17 +24,17 @@
     "value": 0
   },
   {
-    "name": "新安股份",
-    "code": "600596.SH",
     "amount": 3000,
     "available": 3000,
-    "position": 0,
-    "current_price": 16.02,
+    "buy_date": "2026-06-30",
+    "code": "600596.SH",
     "cost": 15.8,
-    "value": 0,
+    "current_price": 16.02,
+    "name": "新安股份",
     "pnl": 0,
-    "stop_loss": 15.3,
+    "position": 0,
     "sector": "光纤",
-    "buy_date": "2026-06-30"
+    "stop_loss": 15.3,
+    "value": 0
   }
 ]

@@ -324,12 +324,16 @@
                 <div class="holding-card-header">
                     <div class="holding-card-title">
                         <div class="holding-card-name">${escapeHtml(h.name)}</div>
-                        <div class="holding-card-code">${escapeHtml(h.code || '')}</div>
-                        ${h.sector ? `<span class="holding-card-sector-tag">${escapeHtml(h.sector)}</span>` : ''}
+                        <div class="holding-card-meta">
+                            <span class="holding-card-code">${escapeHtml(h.code || '')}</span>
+                            ${h.sector ? `<span class="holding-card-sector-tag">${escapeHtml(h.sector)}</span>` : ''}
+                        </div>
                     </div>
-                    <div class="holding-card-pnl">
-                        <div class="holding-card-pnl-value ${pnlClass}">${pnlSign}¥${parseFloat(pnl).toLocaleString()}</div>
-                        <div class="holding-card-pnl-rate ${pnlClass}">${pnlSign}${pnl_rate}%</div>
+                    <div class="holding-card-price">
+                        <div class="holding-card-current-price ${pnlClass}">¥${parseFloat(h.current_price || 0).toFixed(2)}</div>
+                        <div class="holding-card-change-rate ${pnlClass}">
+                            ${pnlSign}${pnl_rate}%
+                        </div>
                     </div>
                 </div>
                 ${h.buy_reason ? `<div class="holding-card-reason"><span class="reason-label">买入逻辑：</span>${escapeHtml(h.buy_reason)}</div>` : ''}
@@ -347,12 +351,12 @@
                         <div class="holding-card-item-value">¥${parseFloat(h.cost || 0).toFixed(3)}</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">最新价</div>
-                        <div class="holding-card-item-value">¥${parseFloat(h.current_price || 0).toFixed(2)}</div>
+                        <div class="holding-card-item-label">浮动盈亏</div>
+                        <div class="holding-card-item-value ${pnlClass}">${pnlSign}¥${parseFloat(pnl).toLocaleString()}</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">浮动盈亏</div>
-                        <div class="holding-card-item-value ${pnlClass}">${pnlSign}¥${(parseFloat(h.pnl) || 0).toLocaleString()}</div>
+                        <div class="holding-card-item-label">盈亏比例</div>
+                        <div class="holding-card-item-value ${pnlClass}">${pnlSign}${pnl_rate}%</div>
                     </div>
                     <div class="holding-card-item">
                         <div class="holding-card-item-label">止损价</div>

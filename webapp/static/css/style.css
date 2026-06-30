@@ -1023,6 +1023,10 @@ body {
     margin-right: 8px;
 }
 
+.holding-card-meta {
+    margin-top: 2px;
+}
+
 .holding-card-code {
     font-size: 12px;
     color: var(--text-light);
@@ -1056,37 +1060,42 @@ body {
     color: #e65100;
 }
 
-.holding-card-pnl {
+.holding-card-price {
     text-align: right;
     flex-shrink: 0;
 }
 
-.holding-card-pnl-value {
-    font-size: 18px;
+.holding-card-current-price {
+    font-size: 20px;
     font-weight: 700;
     line-height: 1.2;
 }
 
-.holding-card-pnl-value.positive {
+.holding-card-current-price.positive {
     color: var(--success);
 }
 
-.holding-card-pnl-value.negative {
+.holding-card-current-price.negative {
     color: var(--danger);
 }
 
-.holding-card-pnl-rate {
+.holding-card-change-rate {
     font-size: 13px;
-    margin-top: 2px;
+    margin-top: 4px;
     font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
 }
 
-.holding-card-pnl-rate.positive {
-    color: var(--success);
+.holding-card-change-rate.positive {
+    color: white;
+    background: var(--success);
 }
 
-.holding-card-pnl-rate.negative {
-    color: var(--danger);
+.holding-card-change-rate.negative {
+    color: white;
+    background: var(--danger);
 }
 
 .holding-card-body {
