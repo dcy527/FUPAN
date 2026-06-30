@@ -535,6 +535,7 @@ def upload_holdings():
                 current_price = row.get('current_price') or row.get('最新价') or row.get('现价') or 0
                 stop_loss = row.get('stop_loss') or row.get('止损价') or 0
                 position = row.get('position') or row.get('仓位') or 0
+                buy_reason = row.get('buy_reason') or row.get('买入逻辑') or row.get('买入理由') or ''
                 if name or code:
                     holdings.append({
                         'name': name.strip(),
@@ -545,6 +546,7 @@ def upload_holdings():
                         'current_price': float(current_price) if current_price else 0,
                         'stop_loss': float(stop_loss) if stop_loss else 0,
                         'position': float(position) if position else 0,
+                        'buy_reason': buy_reason.strip(),
                         'available': float(amount) if amount else 0,
                         'value': 0,
                         'pnl': 0
@@ -782,6 +784,7 @@ def ocr_holdings():
                 'value': 0,
                 'pnl': 0,
                 'stop_loss': 0,
+                'buy_reason': '',
                 'sector': ''
             })
 

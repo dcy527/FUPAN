@@ -1008,26 +1008,63 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+}
+
+.holding-card-title {
+    flex: 1;
+    min-width: 0;
 }
 
 .holding-card-name {
     font-weight: 600;
     font-size: 15px;
+    display: inline-block;
+    margin-right: 8px;
 }
 
 .holding-card-code {
     font-size: 12px;
     color: var(--text-light);
+    display: inline-block;
+}
+
+.holding-card-sector-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #eaf2f8;
+    color: #2980b9;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.holding-card-reason {
+    background: #fff8e1;
+    border-left: 3px solid var(--warning);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #795548;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+
+.holding-card-reason .reason-label {
+    font-weight: 600;
+    color: #e65100;
 }
 
 .holding-card-pnl {
     text-align: right;
+    flex-shrink: 0;
 }
 
 .holding-card-pnl-value {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 .holding-card-pnl-value.positive {
@@ -1039,8 +1076,17 @@ body {
 }
 
 .holding-card-pnl-rate {
-    font-size: 12px;
-    color: var(--text-light);
+    font-size: 13px;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.holding-card-pnl-rate.positive {
+    color: var(--success);
+}
+
+.holding-card-pnl-rate.negative {
+    color: var(--danger);
 }
 
 .holding-card-body {

@@ -230,12 +230,8 @@
                                 <input type="number" id="holding-current" placeholder="自动获取" min="0" step="0.01">
                             </div>
                             <div class="form-item">
-                                <label>盈亏成本</label>
+                                <label>买入价</label>
                                 <input type="number" id="holding-cost" placeholder="如：40.588" min="0" step="0.001">
-                            </div>
-                            <div class="form-item">
-                                <label>证券市值</label>
-                                <input type="number" id="holding-value" placeholder="如：320950" min="0" step="0.01">
                             </div>
                             <div class="form-item">
                                 <label>浮动盈亏</label>
@@ -244,6 +240,10 @@
                             <div class="form-item">
                                 <label>止损价</label>
                                 <input type="number" id="holding-stop-loss" placeholder="如：35.50" min="0" step="0.01">
+                            </div>
+                            <div class="form-item" style="grid-column: 1 / -1;">
+                                <label>买入逻辑</label>
+                                <textarea id="holding-buy-reason" rows="2" placeholder="记录买入理由，如：突破平台、板块龙头、业绩超预期等"></textarea>
                             </div>
                             <div class="form-item">
                                 <label>所属板块</label>

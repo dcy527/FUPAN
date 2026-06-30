@@ -1,41 +1,5 @@
 [
   {
-    "amount": 30100,
-    "available": 30100,
-    "code": "002083.SZ",
-    "cost": 0,
-    "current_price": 10.48,
-    "name": "孚日股份",
-    "pnl": 0,
-    "position": 0,
-    "sector": "",
-    "value": 0
-  },
-  {
-    "amount": 16000,
-    "available": 16000,
-    "code": "000923.SZ",
-    "cost": 0,
-    "current_price": 12.7,
-    "name": "河钢资源",
-    "pnl": 0,
-    "position": 0,
-    "sector": "",
-    "value": 0
-  },
-  {
-    "amount": 10000,
-    "available": 10000,
-    "code": "002182.SZ",
-    "cost": 0,
-    "current_price": 14.15,
-    "name": "宝武铂业",
-    "pnl": 0,
-    "position": 0,
-    "sector": "",
-    "value": 0
-  },
-  {
     "amount": 3000,
     "available": 3000,
     "code": "300827.SZ",
@@ -58,5 +22,19 @@
     "position": 0,
     "sector": "",
     "value": 0
+  },
+  {
+    "name": "新安股份",
+    "code": "600596.SH",
+    "amount": 3000,
+    "available": 3000,
+    "position": 0,
+    "current_price": 16.02,
+    "cost": 15.8,
+    "value": 0,
+    "pnl": 0,
+    "stop_loss": 15.3,
+    "sector": "光纤",
+    "buy_date": "2026-06-30"
   }
 ]

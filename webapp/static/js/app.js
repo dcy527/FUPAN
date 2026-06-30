@@ -322,15 +322,17 @@
                 <button class="holding-card-edit" data-index="${i}" title="编辑">✎</button>
                 <button class="holding-card-delete" data-index="${i}" title="删除">✕</button>
                 <div class="holding-card-header">
-                    <div>
+                    <div class="holding-card-title">
                         <div class="holding-card-name">${escapeHtml(h.name)}</div>
                         <div class="holding-card-code">${escapeHtml(h.code || '')}</div>
+                        ${h.sector ? `<span class="holding-card-sector-tag">${escapeHtml(h.sector)}</span>` : ''}
                     </div>
                     <div class="holding-card-pnl">
                         <div class="holding-card-pnl-value ${pnlClass}">${pnlSign}¥${parseFloat(pnl).toLocaleString()}</div>
                         <div class="holding-card-pnl-rate ${pnlClass}">${pnlSign}${pnl_rate}%</div>
                     </div>
                 </div>
+                ${h.buy_reason ? `<div class="holding-card-reason"><span class="reason-label">买入逻辑：</span>${escapeHtml(h.buy_reason)}</div>` : ''}
                 <div class="holding-card-body">
                     <div class="holding-card-item">
                         <div class="holding-card-item-label">持仓数量</div>
@@ -341,16 +343,12 @@
                         <div class="holding-card-item-value">${(parseFloat(h.position) || 0).toFixed(2)}%</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">盈亏成本</div>
+                        <div class="holding-card-item-label">买入价</div>
                         <div class="holding-card-item-value">¥${parseFloat(h.cost || 0).toFixed(3)}</div>
                     </div>
                     <div class="holding-card-item">
                         <div class="holding-card-item-label">最新价</div>
                         <div class="holding-card-item-value">¥${parseFloat(h.current_price || 0).toFixed(2)}</div>
-                    </div>
-                    <div class="holding-card-item">
-                        <div class="holding-card-item-label">证券市值</div>
-                        <div class="holding-card-item-value">¥${(parseFloat(h.value) || 0).toLocaleString()}</div>
                     </div>
                     <div class="holding-card-item">
                         <div class="holding-card-item-label">浮动盈亏</div>
@@ -364,7 +362,6 @@
                         </div>
                     </div>
                 </div>
-                ${h.sector ? `<span class="holding-card-sector">${escapeHtml(h.sector)}</span>` : ''}
             </div>
         `}).join('');
 
@@ -395,6 +392,7 @@
                 document.getElementById('holding-pnl').value = h.pnl || '';
                 document.getElementById('holding-stop-loss').value = h.stop_loss || '';
                 document.getElementById('holding-sector').value = h.sector || '';
+                document.getElementById('holding-buy-reason').value = h.buy_reason || '';
                 document.getElementById('holding-date').value = h.buy_date || '';
                 currentHoldings.splice(idx, 1);
                 saveHoldings();
@@ -439,6 +437,7 @@
                 pnl: parseFloat(document.getElementById('holding-pnl').value) || 0,
                 stop_loss: parseFloat(document.getElementById('holding-stop-loss').value) || 0,
                 sector: document.getElementById('holding-sector').value.trim(),
+                buy_reason: document.getElementById('holding-buy-reason').value.trim(),
                 buy_date: document.getElementById('holding-date').value
             };
 
@@ -612,7 +611,7 @@
         const templateLink = document.getElementById('download-template');
         templateLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const csv = 'name,code,amount,cost,current_price,stop_loss,sector\n上海瀚讯,300762.SZ,1000,25.50,,23.00,商业航天\n贵州茅台,600519.SH,500,1800.00,,1650.00,白酒\n';
+            const csv = 'name,code,amount,cost,current_price,stop_loss,sector,buy_reason\n上海瀚讯,300762.SZ,1000,25.50,,23.00,商业航天,突破平台放量\n贵州茅台,600519.SH,500,1800.00,,1650.00,白酒,业绩超预期\n';
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
