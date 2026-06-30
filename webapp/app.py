@@ -579,26 +579,67 @@ def get_price():
     if cfg['mock_mode']:
         return jsonify({'success': False, 'message': '模拟模式下无法获取实时价格'})
 
+    code = format_ts_code(code)
+    code_pure = code.replace('.SH', '').replace('.SZ', '').replace('.BJ', '')
+
     try:
-        # 尝试使用 akshare 获取实时行情
         import akshare as ak
-        code_pure = code.replace('.SH', '').replace('.SZ', '').replace('.BJ', '')
         df = ak.stock_zh_a_spot_em()
         stock_row = df[df['代码'] == code_pure]
         if not stock_row.empty:
             price = float(stock_row.iloc[0]['最新价'])
-            return jsonify({'success': True, 'price': price, 'source': 'realtime'})
+            return jsonify({
+                'success': True,
+                'price': price,
+                'source': 'realtime',
+                'source_name': '实时行情(东方财富)',
+                'update_time': datetime.now().strftime('%H:%M:%S')
+            })
     except Exception:
         pass
 
-    # 回退到 Tushare 日线数据
+    try:
+        import requests
+        if code.endswith('.SH'):
+            sina_code = 'sh' + code_pure
+        elif code.endswith('.SZ'):
+            sina_code = 'sz' + code_pure
+        else:
+            sina_code = 'bj' + code_pure
+
+        url = f'https://hq.sinajs.cn/list={sina_code}'
+        headers = {'Referer': 'https://finance.sina.com.cn'}
+        r = requests.get(url, headers=headers, timeout=5)
+        r.encoding = 'gbk'
+        if r.status_code == 200 and '="' in r.text:
+            data_str = r.text.split('"')[1]
+            fields = data_str.split(',')
+            if len(fields) >= 4:
+                price = float(fields[3])
+                if price > 0:
+                    return jsonify({
+                        'success': True,
+                        'price': price,
+                        'source': 'realtime',
+                        'source_name': '实时行情(新浪)',
+                        'update_time': datetime.now().strftime('%H:%M:%S')
+                    })
+    except Exception:
+        pass
+
     try:
         if TUSHARE_AVAILABLE:
-            code = format_ts_code(code)
             pro = ts.pro_api(cfg['tushare_token'])
             df = pro.daily(ts_code=code)
             if df is not None and not df.empty:
-                return jsonify({'success': True, 'price': float(df.iloc[0]['close']), 'source': 'daily'})
+                trade_date = df.iloc[0]['trade_date']
+                return jsonify({
+                    'success': True,
+                    'price': float(df.iloc[0]['close']),
+                    'source': 'daily',
+                    'source_name': f'日线({trade_date[4:6]}/{trade_date[6:8]})',
+                    'update_time': trade_date
+                })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 

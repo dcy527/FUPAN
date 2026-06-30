@@ -1098,6 +1098,13 @@ body {
     background: var(--danger);
 }
 
+.holding-card-price-source {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 4px;
+    text-align: right;
+}
+
 .holding-card-body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

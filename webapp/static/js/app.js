@@ -332,6 +332,7 @@
                         <div class="holding-card-change-rate ${pnlClass}">
                             ${pnlSign}${pnl_rate}%
                         </div>
+                        ${h.price_source ? `<div class="holding-card-price-source">${escapeHtml(h.price_source)}</div>` : ''}
                     </div>
                 </div>
                 ${h.buy_reason ? `<div class="holding-card-reason"><span class="reason-label">买入逻辑：</span>${escapeHtml(h.buy_reason)}</div>` : ''}
@@ -639,18 +640,21 @@
 
         document.getElementById('btn-refresh-prices').addEventListener('click', async () => {
             showToast('正在刷新价格...');
+            let successCount = 0;
             for (let i = 0; i < currentHoldings.length; i++) {
                 const h = currentHoldings[i];
                 if (h.code) {
                     const data = await fetchJSON(`/api/price?code=${encodeURIComponent(h.code)}`);
                     if (data.success && data.price) {
                         currentHoldings[i].current_price = data.price;
+                        currentHoldings[i].price_source = data.source_name || '';
+                        successCount++;
                     }
                 }
             }
             await saveHoldings();
             renderHoldings();
-            showToast('价格已刷新');
+            showToast(`价格已刷新 (${successCount}/${currentHoldings.length})`);
         });
     }
 
