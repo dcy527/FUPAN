@@ -2,30 +2,6 @@
   {
     "amount": 3000,
     "available": 3000,
-    "code": "300827.SZ",
-    "cost": 0,
-    "current_price": 29.8,
-    "name": "上能电气",
-    "pnl": 0,
-    "position": 0,
-    "sector": "",
-    "value": 0
-  },
-  {
-    "amount": 2000,
-    "available": 2000,
-    "code": "002155.SZ",
-    "cost": 0,
-    "current_price": 24.35,
-    "name": "湖南黄金",
-    "pnl": 0,
-    "position": 0,
-    "sector": "",
-    "value": 0
-  },
-  {
-    "amount": 3000,
-    "available": 3000,
     "buy_date": "2026-06-30",
     "code": "600596.SH",
     "cost": 15.8,

@@ -1148,36 +1148,44 @@ body {
     margin-top: 8px;
 }
 
-.holding-card-delete {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: none;
-    border: none;
-    color: var(--text-light);
+.holding-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.holding-card-btn-edit,
+.holding-card-btn-delete {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 6px;
+    font-size: 12px;
     cursor: pointer;
-    padding: 4px 8px;
-    font-size: 14px;
+    transition: all 0.2s;
 }
 
-.holding-card-delete:hover {
-    color: var(--danger);
-}
-
-.holding-card-edit {
-    position: absolute;
-    top: 8px;
-    right: 32px;
-    background: none;
-    border: none;
-    color: var(--text-light);
-    cursor: pointer;
-    padding: 4px 8px;
-    font-size: 14px;
-}
-
-.holding-card-edit:hover {
+.holding-card-btn-edit {
     color: var(--primary);
+    border-color: var(--primary);
+}
+
+.holding-card-btn-edit:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.holding-card-btn-delete {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.holding-card-btn-delete:hover {
+    background: var(--danger);
+    color: white;
 }
 
 .form-actions {

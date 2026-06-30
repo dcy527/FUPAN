@@ -319,8 +319,6 @@
 
             return `
             <div class="holding-card">
-                <button class="holding-card-edit" data-index="${i}" title="编辑">✎</button>
-                <button class="holding-card-delete" data-index="${i}" title="删除">✕</button>
                 <div class="holding-card-header">
                     <div class="holding-card-title">
                         <div class="holding-card-name">${escapeHtml(h.name)}</div>
@@ -366,10 +364,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="holding-card-actions">
+                    <button class="holding-card-btn-edit" data-index="${i}">编辑</button>
+                    <button class="holding-card-btn-delete" data-index="${i}">删除</button>
+                </div>
             </div>
         `}).join('');
 
-        listEl.querySelectorAll('.holding-card-delete').forEach(btn => {
+        listEl.querySelectorAll('.holding-card-btn-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const idx = parseInt(e.currentTarget.dataset.index);
                 if (confirm('确定要删除这条持仓吗？')) {
@@ -381,7 +383,7 @@
             });
         });
 
-        listEl.querySelectorAll('.holding-card-edit').forEach(btn => {
+        listEl.querySelectorAll('.holding-card-btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(e.currentTarget.dataset.index);
                 const h = currentHoldings[idx];
