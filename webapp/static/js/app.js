@@ -255,21 +255,26 @@
         let totalAmount = 0;
         let totalValue = 0;
         let totalCost = 0;
+        let totalPnl = 0;
 
         currentHoldings.forEach(h => {
             const amount = parseFloat(h.amount) || 0;
-            const cost = parseFloat(h.cost) || 0;
             const current = parseFloat(h.current_price) || 0;
+            const value = parseFloat(h.value) || (amount * current);
+            const cost = parseFloat(h.cost) || 0;
+            const pnl = parseFloat(h.pnl) || 0;
+
             totalAmount += amount;
-            totalValue += amount * current;
+            totalValue += value;
             totalCost += amount * cost;
+            totalPnl += pnl;
         });
 
-        const totalPnl = totalValue - totalCost;
-        
+        const totalProfit = totalValue - totalCost;
+
         document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
         document.getElementById('total-value').textContent = '¥' + totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
+
         const pnlEl = document.getElementById('total-pnl');
         pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '¥' + totalPnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         pnlEl.className = 'summary-value ' + (totalPnl >= 0 ? 'positive' : 'negative');
@@ -294,7 +299,7 @@
             const { pnl, pnl_rate } = calculatePnL(h);
             const pnlClass = parseFloat(pnl) >= 0 ? 'positive' : 'negative';
             const pnlSign = parseFloat(pnl) >= 0 ? '+' : '';
-            
+
             return `
             <div class="holding-card">
                 <button class="holding-card-edit" data-index="${i}" title="编辑">✎</button>
@@ -315,12 +320,24 @@
                         <div class="holding-card-item-value">${(parseFloat(h.amount) || 0).toLocaleString()}</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">成本价</div>
-                        <div class="holding-card-item-value">¥${parseFloat(h.cost || 0).toFixed(2)}</div>
+                        <div class="holding-card-item-label">仓位%</div>
+                        <div class="holding-card-item-value">${(parseFloat(h.position) || 0).toFixed(2)}%</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">当前价</div>
+                        <div class="holding-card-item-label">盈亏成本</div>
+                        <div class="holding-card-item-value">¥${parseFloat(h.cost || 0).toFixed(3)}</div>
+                    </div>
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">最新价</div>
                         <div class="holding-card-item-value">¥${parseFloat(h.current_price || 0).toFixed(2)}</div>
+                    </div>
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">证券市值</div>
+                        <div class="holding-card-item-value">¥${(parseFloat(h.value) || 0).toLocaleString()}</div>
+                    </div>
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">浮动盈亏</div>
+                        <div class="holding-card-item-value ${pnlClass}">${pnlSign}¥${(parseFloat(h.pnl) || 0).toLocaleString()}</div>
                     </div>
                 </div>
                 ${h.sector ? `<span class="holding-card-sector">${escapeHtml(h.sector)}</span>` : ''}
@@ -346,10 +363,13 @@
                 document.getElementById('holding-name').value = h.name || '';
                 document.getElementById('holding-code').value = h.code || '';
                 document.getElementById('holding-amount').value = h.amount || '';
-                document.getElementById('holding-cost').value = h.cost || '';
+                document.getElementById('holding-available').value = h.available || '';
+                document.getElementById('holding-position').value = h.position || '';
                 document.getElementById('holding-current').value = h.current_price || '';
-                document.getElementById('holding-sector').value = h.sector || '';
+                document.getElementById('holding-cost').value = h.cost || '';
+                document.getElementById('holding-value').value = h.value || '';
                 document.getElementById('holding-pnl').value = h.pnl || '';
+                document.getElementById('holding-sector').value = h.sector || '';
                 document.getElementById('holding-date').value = h.buy_date || '';
                 currentHoldings.splice(idx, 1);
                 saveHoldings();
@@ -386,10 +406,13 @@
                 name: name,
                 code: code,
                 amount: parseFloat(document.getElementById('holding-amount').value) || 0,
-                cost: parseFloat(document.getElementById('holding-cost').value) || 0,
+                available: parseFloat(document.getElementById('holding-available').value) || 0,
+                position: parseFloat(document.getElementById('holding-position').value) || 0,
                 current_price: parseFloat(document.getElementById('holding-current').value) || 0,
-                sector: document.getElementById('holding-sector').value.trim(),
+                cost: parseFloat(document.getElementById('holding-cost').value) || 0,
+                value: parseFloat(document.getElementById('holding-value').value) || 0,
                 pnl: parseFloat(document.getElementById('holding-pnl').value) || 0,
+                sector: document.getElementById('holding-sector').value.trim(),
                 buy_date: document.getElementById('holding-date').value
             };
 

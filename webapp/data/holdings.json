@@ -16,5 +16,53 @@
     "current_price": 0,
     "name": "证券代码",
     "sector": ""
+  },
+  {
+    "amount": 300762,
+    "code": "300762.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "上海瀚讯",
+    "sector": ""
+  },
+  {
+    "amount": 2083,
+    "code": "002083.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "孚日股份",
+    "sector": ""
+  },
+  {
+    "amount": 923,
+    "code": "000923.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "河钢资源",
+    "sector": ""
+  },
+  {
+    "amount": 2182,
+    "code": "002182.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "宝武铂业",
+    "sector": ""
+  },
+  {
+    "amount": 300827,
+    "code": "300827.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "上能电气",
+    "sector": ""
+  },
+  {
+    "amount": 2155,
+    "code": "002155.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "湖南黄金",
+    "sector": ""
   }
 ]

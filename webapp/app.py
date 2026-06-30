@@ -667,66 +667,109 @@ def ocr_holdings():
 
         img = Image.open(img_path)
         # 转为灰度提高识别率
-        img = img.convert('L')
-        text = pytesseract.image_to_string(img, lang='chi_sim+eng', config='--psm 6')
+        img_gray = img.convert('L')
+
+        # 使用表格模式识别（psm 6 = 假设为统一的文本块）
+        text = pytesseract.image_to_string(img_gray, lang='chi_sim+eng', config='--psm 6')
+
+        # 用TSV模式获取每个文字的坐标位置
+        try:
+            data = pytesseract.image_to_data(img_gray, lang='chi_sim+eng', config='--psm 6', output_type=pytesseract.Output.DICT)
+        except:
+            data = None
 
         lines = text.split('\n')
         holdings = []
 
-        # 多种模式匹配：证券代码（6位数字）+ 证券名称
-        # 模式1: 代码在前 "300762 上海瀚讯 1000"
-        # 模式2: 名称在前 "上海瀚讯 300762 1000"
-        # 模式3: 带分隔符 "300762, 上海瀚讯, 1000"
+        # 找到表头行，确定列位置
+        header_line = None
+        for line in lines:
+            if '证券代码' in line or ('代码' in line and '名称' in line):
+                header_line = line
+                break
 
+        # 改进策略：按行解析，每行包含一条持仓数据
         for line in lines:
             line = line.strip()
             if not line:
                 continue
 
-            # 提取所有6位数字（股票代码）
+            # 跳过表头和合计行
+            if any(kw in line for kw in ['证券代码', '证券名称', '持仓合计', '合计', '证券市值', '浮动盈亏', '当日盈亏', '最新价']):
+                continue
+
+            # 提取所有6位数字
             codes = re.findall(r'\b(\d{6})\b', line)
+            if not codes:
+                continue
+
+            code = codes[0]
+
+            # 股票代码通常以特定数字开头
+            # 沪市: 6开头; 深市: 0/3开头; 北交所: 8/4开头
+            if not (code[0] in ['0', '3', '6', '8', '4']):
+                continue
 
             # 提取中文名称（2-8个中文字符）
             names = re.findall(r'[\u4e00-\u9fa5]{2,8}', line)
+            if not names:
+                continue
 
-            # 提取数字（可能是持仓数量）
-            amounts = re.findall(r'\b(\d{3,})\b', line)
+            # 过滤明显的非股票名称
+            blacklist = ['证券代码', '证券名称', '持仓', '股票', '代码', '名称', '数量', '最新价',
+                         '成本', '仓位', '盈亏', '可用', '比例', '当日', '浮动', '市值', '股份']
+            valid_names = [n for n in names if n not in blacklist]
+            if not valid_names:
+                continue
 
-            if codes and names:
-                code = codes[0]
-                name = names[0]
+            name = valid_names[0]
 
-                # 过滤明显的非股票名称
-                if name in ['证券代码', '证券名称', '持仓', '股票', '代码', '名称', '数量', '最新价', '成本']:
-                    continue
+            # 提取所有数字（除代码外的）
+            all_nums = re.findall(r'\b(\d+(?:\.\d+)?)\b', line)
+            nums = []
+            for n in all_nums:
+                n_clean = n.replace(',', '')
+                try:
+                    nums.append(float(n_clean))
+                except:
+                    pass
 
-                # 补全交易所后缀
-                if code.startswith('6'):
-                    full_code = f'{code}.SH'
-                elif code.startswith(('0', '3')):
-                    full_code = f'{code}.SZ'
-                elif code.startswith(('8', '4')):
-                    full_code = f'{code}.BJ'
-                else:
-                    full_code = code
+            # 找到代码在所有数字中的位置
+            try:
+                code_pos = all_nums.index(code)
+            except ValueError:
+                code_pos = 0
 
-                # 获取持仓数量（第一个大数字）
-                amount = 0
-                if amounts:
-                    for a in amounts:
-                        a_num = int(a.replace(',', ''))
-                        if a_num >= 100:  # 持仓至少100股
-                            amount = a_num
-                            break
+            # 数量 = 代码之后第一个大整数（>=100）
+            amount = 0
+            for i in range(code_pos + 1, len(all_nums)):
+                n_val = float(all_nums[i].replace(',', ''))
+                if n_val >= 100 and n_val == int(n_val):  # 整数且>=100
+                    amount = int(n_val)
+                    break
 
-                holdings.append({
-                    'name': name,
-                    'code': full_code,
-                    'amount': amount,
-                    'cost': 0,
-                    'current_price': 0,
-                    'sector': ''
-                })
+            # 补全交易所后缀
+            if code.startswith('6'):
+                full_code = f'{code}.SH'
+            elif code.startswith(('0', '3')):
+                full_code = f'{code}.SZ'
+            elif code.startswith(('8', '4')):
+                full_code = f'{code}.BJ'
+            else:
+                full_code = code
+
+            holdings.append({
+                'name': name,
+                'code': full_code,
+                'amount': amount,
+                'available': amount,
+                'position': 0,
+                'cost': 0,
+                'current_price': 0,
+                'value': 0,
+                'pnl': 0,
+                'sector': ''
+            })
 
         # 去重（按代码）
         seen = set()
