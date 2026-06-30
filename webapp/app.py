@@ -539,6 +539,74 @@ def upload_holdings():
         return jsonify({'success': False, 'message': f'解析失败: {str(e)}'})
 
 
+@app.route('/api/price')
+def get_price():
+    code = request.args.get('code', '').strip()
+    if not code:
+        return jsonify({'success': False, 'message': '请提供股票代码'})
+    
+    cfg = get_config()
+    if cfg['mock_mode'] or not TUSHARE_AVAILABLE:
+        return jsonify({'success': False, 'message': '未配置Tushare Token'})
+    
+    try:
+        pro = ts.pro_api(cfg['tushare_token'])
+        df = pro.daily(ts_code=code)
+        if df is not None and not df.empty:
+            return jsonify({'success': True, 'price': float(df.iloc[0]['close'])})
+        return jsonify({'success': False, 'message': '未找到该股票数据'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/holdings/ocr', methods=['POST'])
+def ocr_holdings():
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': '没有上传图片'})
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': '未选择图片'})
+    
+    try:
+        import re
+        from PIL import Image
+        import pytesseract
+        
+        img_path = os.path.join(DATA_DIR, 'temp_ocr.png')
+        file.save(img_path)
+        
+        img = Image.open(img_path)
+        text = pytesseract.image_to_string(img, lang='chi_sim+eng')
+        
+        pattern = r'([\u4e00-\u9fa5]{2,10})\s*([0-9]{6})\s*([0-9,]+)'
+        matches = re.findall(pattern, text)
+        
+        holdings = []
+        for match in matches:
+            name = match[0].strip()
+            code = match[1].strip()
+            amount = match[2].strip().replace(',', '')
+            if name and code:
+                holdings.append({
+                    'name': name,
+                    'code': code + ('.SZ' if code.startswith('0') or code.startswith('3') else '.SH'),
+                    'amount': float(amount),
+                    'cost': 0,
+                    'current_price': 0,
+                    'sector': ''
+                })
+        
+        os.remove(img_path)
+        
+        if holdings:
+            return jsonify({'success': True, 'holdings': holdings})
+        return jsonify({'success': False, 'message': '未能识别持仓信息'})
+    except ImportError:
+        return jsonify({'success': False, 'message': 'OCR功能需要安装pytesseract和Pillow库'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'识别失败: {str(e)}'})
+
+
 @app.route('/api/review/daily')
 def daily_review():
     reviewer = get_reviewer()
