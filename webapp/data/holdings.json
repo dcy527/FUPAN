@@ -1,68 +1,74 @@
 [
   {
     "amount": 7000,
-    "buy_date": "",
+    "available": 7000,
     "code": "300762.SZ",
-    "cost": 40.58,
-    "current_price": 43.9,
+    "cost": 0,
+    "current_price": 0,
     "name": "上海瀚讯",
     "pnl": 0,
-    "sector": "商业航天"
+    "position": 0,
+    "sector": "",
+    "value": 0
   },
   {
-    "amount": 2083,
-    "code": "300762.SZ",
-    "cost": 0,
-    "current_price": 0,
-    "name": "证券代码",
-    "sector": ""
-  },
-  {
-    "amount": 300762,
-    "code": "300762.SZ",
-    "cost": 0,
-    "current_price": 0,
-    "name": "上海瀚讯",
-    "sector": ""
-  },
-  {
-    "amount": 2083,
+    "amount": 30100,
+    "available": 30100,
     "code": "002083.SZ",
     "cost": 0,
     "current_price": 0,
     "name": "孚日股份",
-    "sector": ""
+    "pnl": 0,
+    "position": 0,
+    "sector": "",
+    "value": 0
   },
   {
-    "amount": 923,
+    "amount": 16000,
+    "available": 16000,
     "code": "000923.SZ",
     "cost": 0,
     "current_price": 0,
     "name": "河钢资源",
-    "sector": ""
+    "pnl": 0,
+    "position": 0,
+    "sector": "",
+    "value": 0
   },
   {
-    "amount": 2182,
+    "amount": 10000,
+    "available": 10000,
     "code": "002182.SZ",
     "cost": 0,
     "current_price": 0,
     "name": "宝武铂业",
-    "sector": ""
+    "pnl": 0,
+    "position": 0,
+    "sector": "",
+    "value": 0
   },
   {
-    "amount": 300827,
+    "amount": 3000,
+    "available": 3000,
     "code": "300827.SZ",
     "cost": 0,
     "current_price": 0,
     "name": "上能电气",
-    "sector": ""
+    "pnl": 0,
+    "position": 0,
+    "sector": "",
+    "value": 0
   },
   {
-    "amount": 2155,
+    "amount": 2000,
+    "available": 2000,
     "code": "002155.SZ",
     "cost": 0,
     "current_price": 0,
     "name": "湖南黄金",
-    "sector": ""
+    "pnl": 0,
+    "position": 0,
+    "sector": "",
+    "value": 0
   }
 ]
