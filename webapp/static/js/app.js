@@ -184,24 +184,32 @@
             `${formatDate(data.start_date)} ~ ${formatDate(data.end_date)}`;
 
         const top3El = document.getElementById('weekly-top3');
-        top3El.innerHTML = data.top3.map((name, i) => `
-            <div class="podium-item">
-                <div class="podium-rank">${i + 1}</div>
-                <div class="podium-name">${escapeHtml(name)}</div>
-                <div class="podium-bar">TOP${i + 1}</div>
-            </div>
-        `).join('');
+        if (data.top3.length === 0) {
+            top3El.innerHTML = '<div class="empty-state" style="width:100%"><p>暂无数据</p></div>';
+        } else {
+            top3El.innerHTML = data.top3.map((name, i) => `
+                <div class="podium-item">
+                    <div class="podium-rank">${i + 1}</div>
+                    <div class="podium-name">${escapeHtml(name)}</div>
+                    <div class="podium-bar">TOP${i + 1}</div>
+                </div>
+            `).join('');
+        }
 
         document.getElementById('lifecycle-stage').textContent = data.lifecycle.stage;
         document.getElementById('lifecycle-evidence').textContent = data.lifecycle.evidence;
 
         const subEl = document.getElementById('sub-sectors');
-        subEl.innerHTML = data.sub_sectors.map(s => `
-            <div class="sub-sector-item">
-                <span class="sub-sector-name">${escapeHtml(s.name)}</span>
-                <span class="sub-sector-stage">${escapeHtml(s.stage)}</span>
-            </div>
-        `).join('');
+        if (data.sub_sectors.length === 0) {
+            subEl.innerHTML = '<div class="empty-state"><p>暂无数据</p></div>';
+        } else {
+            subEl.innerHTML = data.sub_sectors.map(s => `
+                <div class="sub-sector-item">
+                    <span class="sub-sector-name">${escapeHtml(s.name)}</span>
+                    <span class="sub-sector-stage">${escapeHtml(s.stage)}</span>
+                </div>
+            `).join('');
+        }
 
         const diagEl = document.getElementById('weekly-holding-diag');
         if (data.holding_diag.length === 0) {
