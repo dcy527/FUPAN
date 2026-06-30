@@ -8,9 +8,9 @@
     --primary: #e74c3c;
     --primary-dark: #c0392b;
     --secondary: #2c3e50;
-    --success: #27ae60;
+    --success: #e74c3c;
     --warning: #f39c12;
-    --danger: #e74c3c;
+    --danger: #27ae60;
     --bg: #f5f7fa;
     --card-bg: #ffffff;
     --text: #2c3e50;
@@ -1135,6 +1135,16 @@ body {
 
 .holding-card-item-value.stop-loss-warning {
     color: var(--warning);
+    font-weight: 600;
+}
+
+.holding-card-item-value.positive {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.holding-card-item-value.negative {
+    color: var(--danger);
     font-weight: 600;
 }
 
