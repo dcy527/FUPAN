@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "name": "上海瀚讯",
+    "code": "300762.SZ",
+    "amount": 7000,
+    "cost": 40.58,
+    "current_price": 43.9,
+    "sector": "商业航天",
+    "pnl": 0,
+    "buy_date": ""
+  }
+]

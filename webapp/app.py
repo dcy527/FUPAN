@@ -561,18 +561,33 @@ def get_price():
         return jsonify({'success': False, 'message': '请提供股票代码'})
 
     cfg = get_config()
-    if cfg['mock_mode'] or not TUSHARE_AVAILABLE:
-        return jsonify({'success': False, 'message': '未配置Tushare Token'})
+    if cfg['mock_mode']:
+        return jsonify({'success': False, 'message': '模拟模式下无法获取实时价格'})
 
     try:
-        code = format_ts_code(code)
-        pro = ts.pro_api(cfg['tushare_token'])
-        df = pro.daily(ts_code=code)
-        if df is not None and not df.empty:
-            return jsonify({'success': True, 'price': float(df.iloc[0]['close'])})
-        return jsonify({'success': False, 'message': '未找到该股票数据'})
+        # 尝试使用 akshare 获取实时行情
+        import akshare as ak
+        code_pure = code.replace('.SH', '').replace('.SZ', '').replace('.BJ', '')
+        df = ak.stock_zh_a_spot_em()
+        stock_row = df[df['代码'] == code_pure]
+        if not stock_row.empty:
+            price = float(stock_row.iloc[0]['最新价'])
+            return jsonify({'success': True, 'price': price, 'source': 'realtime'})
+    except Exception:
+        pass
+
+    # 回退到 Tushare 日线数据
+    try:
+        if TUSHARE_AVAILABLE:
+            code = format_ts_code(code)
+            pro = ts.pro_api(cfg['tushare_token'])
+            df = pro.daily(ts_code=code)
+            if df is not None and not df.empty:
+                return jsonify({'success': True, 'price': float(df.iloc[0]['close']), 'source': 'daily'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+    return jsonify({'success': False, 'message': '未找到该股票数据'})
 
 
 @app.route('/api/stock/info')
@@ -582,33 +597,53 @@ def get_stock_info():
         return jsonify({'success': False, 'message': '请提供股票代码'})
 
     cfg = get_config()
-    if cfg['mock_mode'] or not TUSHARE_AVAILABLE:
-        return jsonify({'success': False, 'message': '未配置Tushare Token'})
+    if cfg['mock_mode']:
+        return jsonify({'success': False, 'message': '模拟模式下无法获取实时价格'})
 
     try:
         code = format_ts_code(code)
-        pro = ts.pro_api(cfg['tushare_token'])
+        code_pure = code.replace('.SH', '').replace('.SZ', '').replace('.BJ', '')
 
-        df = pro.daily(ts_code=code)
-        if df is None or df.empty:
+        # 获取名称和行业（从 Tushare）
+        name = ''
+        industry = ''
+        if TUSHARE_AVAILABLE:
+            pro = ts.pro_api(cfg['tushare_token'])
+            stocks = pro.stock_basic(ts_code=code, fields='ts_code,name,industry')
+            if stocks is not None and not stocks.empty:
+                name = stocks.iloc[0]['name']
+                industry = stocks.iloc[0]['industry'] or ''
+
+        # 获取实时价格（优先 akshare）
+        price = None
+        source = 'daily'
+        try:
+            import akshare as ak
+            df = ak.stock_zh_a_spot_em()
+            stock_row = df[df['代码'] == code_pure]
+            if not stock_row.empty:
+                price = float(stock_row.iloc[0]['最新价'])
+                source = 'realtime'
+        except Exception:
+            pass
+
+        # 回退到 Tushare 日线
+        if price is None and TUSHARE_AVAILABLE:
+            pro = ts.pro_api(cfg['tushare_token'])
+            df = pro.daily(ts_code=code)
+            if df is not None and not df.empty:
+                price = float(df.iloc[0]['close'])
+
+        if price is None:
             return jsonify({'success': False, 'message': '未找到该股票数据'})
-
-        price = float(df.iloc[0]['close'])
-
-        stocks = pro.stock_basic(ts_code=code, fields='ts_code,name,industry')
-        if stocks is not None and not stocks.empty:
-            name = stocks.iloc[0]['name']
-            industry = stocks.iloc[0]['industry'] or ''
-        else:
-            name = ''
-            industry = ''
 
         return jsonify({
             'success': True,
             'code': code,
             'name': name,
             'price': price,
-            'industry': industry
+            'industry': industry,
+            'source': source
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
