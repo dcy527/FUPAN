@@ -239,6 +239,40 @@
         const data = await fetchJSON(API.holdings);
         currentHoldings = Array.isArray(data) ? data : [];
         renderHoldings();
+        updateSummary();
+    }
+
+    function calculatePnL(holding) {
+        if (!holding.amount || !holding.cost || !holding.current_price) {
+            return { pnl: 0, pnl_rate: 0 };
+        }
+        const pnl = (holding.current_price - holding.cost) * holding.amount;
+        const pnl_rate = ((holding.current_price - holding.cost) / holding.cost * 100);
+        return { pnl: pnl.toFixed(2), pnl_rate: pnl_rate.toFixed(2) };
+    }
+
+    function updateSummary() {
+        let totalAmount = 0;
+        let totalValue = 0;
+        let totalCost = 0;
+
+        currentHoldings.forEach(h => {
+            const amount = parseFloat(h.amount) || 0;
+            const cost = parseFloat(h.cost) || 0;
+            const current = parseFloat(h.current_price) || 0;
+            totalAmount += amount;
+            totalValue += amount * current;
+            totalCost += amount * cost;
+        });
+
+        const totalPnl = totalValue - totalCost;
+        
+        document.getElementById('total-amount').textContent = totalAmount.toLocaleString();
+        document.getElementById('total-value').textContent = '¥' + totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        const pnlEl = document.getElementById('total-pnl');
+        pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '¥' + totalPnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        pnlEl.className = 'summary-value ' + (totalPnl >= 0 ? 'positive' : 'negative');
     }
 
     function renderHoldings() {
@@ -251,32 +285,81 @@
         if (currentHoldings.length === 0) {
             listEl.innerHTML = '';
             emptyEl.classList.remove('hidden');
+            updateSummary();
             return;
         }
 
         emptyEl.classList.add('hidden');
-        listEl.innerHTML = currentHoldings.map((h, i) => `
-            <div class="holding-item">
-                <div class="holding-info">
-                    <div class="holding-name">${escapeHtml(h.name)}</div>
-                    <div class="holding-meta">
-                        <span>${escapeHtml(h.code || '')}</span>
-                        <span>${escapeHtml(h.sector || '')}</span>
+        listEl.innerHTML = currentHoldings.map((h, i) => {
+            const { pnl, pnl_rate } = calculatePnL(h);
+            const pnlClass = parseFloat(pnl) >= 0 ? 'positive' : 'negative';
+            const pnlSign = parseFloat(pnl) >= 0 ? '+' : '';
+            
+            return `
+            <div class="holding-card">
+                <button class="holding-card-edit" data-index="${i}" title="编辑">✎</button>
+                <button class="holding-card-delete" data-index="${i}" title="删除">✕</button>
+                <div class="holding-card-header">
+                    <div>
+                        <div class="holding-card-name">${escapeHtml(h.name)}</div>
+                        <div class="holding-card-code">${escapeHtml(h.code || '')}</div>
+                    </div>
+                    <div class="holding-card-pnl">
+                        <div class="holding-card-pnl-value ${pnlClass}">${pnlSign}¥${parseFloat(pnl).toLocaleString()}</div>
+                        <div class="holding-card-pnl-rate ${pnlClass}">${pnlSign}${pnl_rate}%</div>
                     </div>
                 </div>
-                <button class="holding-delete" data-index="${i}" title="删除">✕</button>
+                <div class="holding-card-body">
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">持仓数量</div>
+                        <div class="holding-card-item-value">${(parseFloat(h.amount) || 0).toLocaleString()}</div>
+                    </div>
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">成本价</div>
+                        <div class="holding-card-item-value">¥${parseFloat(h.cost || 0).toFixed(2)}</div>
+                    </div>
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">当前价</div>
+                        <div class="holding-card-item-value">¥${parseFloat(h.current_price || 0).toFixed(2)}</div>
+                    </div>
+                </div>
+                ${h.sector ? `<span class="holding-card-sector">${escapeHtml(h.sector)}</span>` : ''}
             </div>
-        `).join('');
+        `}).join('');
 
-        listEl.querySelectorAll('.holding-delete').forEach(btn => {
+        listEl.querySelectorAll('.holding-card-delete').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const idx = parseInt(e.currentTarget.dataset.index);
-                currentHoldings.splice(idx, 1);
-                await saveHoldings();
-                renderHoldings();
-                showToast('已删除');
+                if (confirm('确定要删除这条持仓吗？')) {
+                    currentHoldings.splice(idx, 1);
+                    await saveHoldings();
+                    renderHoldings();
+                    showToast('已删除');
+                }
             });
         });
+
+        listEl.querySelectorAll('.holding-card-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.index);
+                const h = currentHoldings[idx];
+                document.getElementById('holding-name').value = h.name || '';
+                document.getElementById('holding-code').value = h.code || '';
+                document.getElementById('holding-amount').value = h.amount || '';
+                document.getElementById('holding-cost').value = h.cost || '';
+                document.getElementById('holding-current').value = h.current_price || '';
+                document.getElementById('holding-sector').value = h.sector || '';
+                document.getElementById('holding-pnl').value = h.pnl || '';
+                document.getElementById('holding-date').value = h.buy_date || '';
+                currentHoldings.splice(idx, 1);
+                saveHoldings();
+                renderHoldings();
+                document.getElementById('holding-name').focus();
+                showToast('编辑模式：修改后点击添加即可更新');
+            });
+        });
+
+        updateSummary();
     }
 
     async function saveHoldings() {
@@ -288,26 +371,62 @@
 
     function initHoldingForm() {
         const form = document.getElementById('add-holding-form');
+        
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('holding-name').value.trim();
             const code = document.getElementById('holding-code').value.trim();
-            const sector = document.getElementById('holding-sector').value.trim();
-
-            if (!name || !code || !sector) {
-                showToast('请填写完整信息');
+            
+            if (!name || !code) {
+                showToast('请填写股票名称和代码');
                 return;
             }
 
-            currentHoldings.push({ name, code, sector });
+            const holding = {
+                name: name,
+                code: code,
+                amount: parseFloat(document.getElementById('holding-amount').value) || 0,
+                cost: parseFloat(document.getElementById('holding-cost').value) || 0,
+                current_price: parseFloat(document.getElementById('holding-current').value) || 0,
+                sector: document.getElementById('holding-sector').value.trim(),
+                pnl: parseFloat(document.getElementById('holding-pnl').value) || 0,
+                buy_date: document.getElementById('holding-date').value
+            };
+
+            currentHoldings.push(holding);
             await saveHoldings();
             renderHoldings();
             form.reset();
             showToast('添加成功');
         });
+
+        document.getElementById('btn-fetch-price').addEventListener('click', async () => {
+            const code = document.getElementById('holding-code').value.trim();
+            if (!code) {
+                showToast('请先输入股票代码');
+                return;
+            }
+            showToast('正在获取价格...');
+            const data = await fetchJSON(`/api/price?code=${encodeURIComponent(code)}`);
+            if (data.success && data.price) {
+                document.getElementById('holding-current').value = data.price.toFixed(2);
+                showToast(`获取成功：¥${data.price.toFixed(2)}`);
+            } else {
+                showToast('获取价格失败');
+            }
+        });
     }
 
     function initFileUpload() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
         const fileInput = document.getElementById('file-upload');
         const resultEl = document.getElementById('upload-result');
 
@@ -347,10 +466,57 @@
             setTimeout(() => resultEl.classList.add('hidden'), 4000);
         });
 
+        const imageInput = document.getElementById('image-upload');
+        const previewEl = document.getElementById('image-preview');
+        const imageResultEl = document.getElementById('image-result');
+
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                previewEl.innerHTML = `<img src="${e.target.result}" alt="预览">`;
+                previewEl.classList.remove('hidden');
+                
+                imageResultEl.className = 'image-result';
+                imageResultEl.textContent = '正在识别图片中的持仓信息...';
+                imageResultEl.classList.remove('hidden');
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const res = await fetch('/api/holdings/ocr', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+
+                    if (data.success && data.holdings && data.holdings.length > 0) {
+                        currentHoldings = [...currentHoldings, ...data.holdings];
+                        await saveHoldings();
+                        renderHoldings();
+                        imageResultEl.className = 'image-result';
+                        imageResultEl.innerHTML = `✓ 识别成功！共找到 ${data.holdings.length} 条持仓：<br>` + 
+                            data.holdings.map(h => `${h.name} (${h.code})`).join('<br>');
+                        showToast('识别成功，已添加到持仓列表');
+                    } else {
+                        imageResultEl.className = 'image-result error';
+                        imageResultEl.textContent = '✗ 未能在图片中识别到持仓信息，请尝试手动输入或使用文件导入';
+                    }
+                } catch (err) {
+                    imageResultEl.className = 'image-result error';
+                    imageResultEl.textContent = '✗ 识别失败，请尝试手动输入';
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
         const templateLink = document.getElementById('download-template');
         templateLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const csv = 'name,code,sector\n上海瀚讯,300762.SZ,商业航天\n贵州茅台,600519.SH,白酒\n';
+            const csv = 'name,code,amount,cost,current_price,sector\n上海瀚讯,300762.SZ,1000,25.50,,商业航天\n贵州茅台,600519.SH,500,1800.00,,白酒\n';
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -368,6 +534,22 @@
             await saveHoldings();
             renderHoldings();
             showToast('已清空');
+        });
+
+        document.getElementById('btn-refresh-prices').addEventListener('click', async () => {
+            showToast('正在刷新价格...');
+            for (let i = 0; i < currentHoldings.length; i++) {
+                const h = currentHoldings[i];
+                if (h.code) {
+                    const data = await fetchJSON(`/api/price?code=${encodeURIComponent(h.code)}`);
+                    if (data.success && data.price) {
+                        currentHoldings[i].current_price = data.price;
+                    }
+                }
+            }
+            await saveHoldings();
+            renderHoldings();
+            showToast('价格已刷新');
         });
     }
 
