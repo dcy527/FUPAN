@@ -300,6 +300,23 @@
             const pnlClass = parseFloat(pnl) >= 0 ? 'positive' : 'negative';
             const pnlSign = parseFloat(pnl) >= 0 ? '+' : '';
 
+            const currentPrice = parseFloat(h.current_price) || 0;
+            const stopLoss = parseFloat(h.stop_loss) || 0;
+            let stopLossClass = '';
+            let stopLossHint = '';
+            if (stopLoss > 0 && currentPrice > 0) {
+                const distance = ((currentPrice - stopLoss) / currentPrice * 100).toFixed(2);
+                if (currentPrice <= stopLoss) {
+                    stopLossClass = 'stop-loss-triggered';
+                    stopLossHint = '⚠️ 已触发止损';
+                } else if (distance <= 3) {
+                    stopLossClass = 'stop-loss-warning';
+                    stopLossHint = `距止损 ${distance}%`;
+                } else {
+                    stopLossHint = `距止损 ${distance}%`;
+                }
+            }
+
             return `
             <div class="holding-card">
                 <button class="holding-card-edit" data-index="${i}" title="编辑">✎</button>
@@ -339,6 +356,13 @@
                         <div class="holding-card-item-label">浮动盈亏</div>
                         <div class="holding-card-item-value ${pnlClass}">${pnlSign}¥${(parseFloat(h.pnl) || 0).toLocaleString()}</div>
                     </div>
+                    <div class="holding-card-item">
+                        <div class="holding-card-item-label">止损价</div>
+                        <div class="holding-card-item-value ${stopLossClass}">
+                            ¥${stopLoss.toFixed(2)}
+                            ${stopLossHint ? `<div class="stop-loss-hint">${stopLossHint}</div>` : ''}
+                        </div>
+                    </div>
                 </div>
                 ${h.sector ? `<span class="holding-card-sector">${escapeHtml(h.sector)}</span>` : ''}
             </div>
@@ -369,6 +393,7 @@
                 document.getElementById('holding-cost').value = h.cost || '';
                 document.getElementById('holding-value').value = h.value || '';
                 document.getElementById('holding-pnl').value = h.pnl || '';
+                document.getElementById('holding-stop-loss').value = h.stop_loss || '';
                 document.getElementById('holding-sector').value = h.sector || '';
                 document.getElementById('holding-date').value = h.buy_date || '';
                 currentHoldings.splice(idx, 1);
@@ -412,6 +437,7 @@
                 cost: parseFloat(document.getElementById('holding-cost').value) || 0,
                 value: parseFloat(document.getElementById('holding-value').value) || 0,
                 pnl: parseFloat(document.getElementById('holding-pnl').value) || 0,
+                stop_loss: parseFloat(document.getElementById('holding-stop-loss').value) || 0,
                 sector: document.getElementById('holding-sector').value.trim(),
                 buy_date: document.getElementById('holding-date').value
             };
@@ -586,7 +612,7 @@
         const templateLink = document.getElementById('download-template');
         templateLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const csv = 'name,code,amount,cost,current_price,sector\n上海瀚讯,300762.SZ,1000,25.50,,商业航天\n贵州茅台,600519.SH,500,1800.00,,白酒\n';
+            const csv = 'name,code,amount,cost,current_price,stop_loss,sector\n上海瀚讯,300762.SZ,1000,25.50,,23.00,商业航天\n贵州茅台,600519.SH,500,1800.00,,1650.00,白酒\n';
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

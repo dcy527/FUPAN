@@ -530,11 +530,24 @@ def upload_holdings():
                 name = row.get('name') or row.get('股票名称') or row.get('名称') or ''
                 code = row.get('code') or row.get('股票代码') or row.get('代码') or ''
                 sector = row.get('sector') or row.get('所属板块') or row.get('板块') or ''
+                amount = row.get('amount') or row.get('数量') or row.get('持仓数量') or 0
+                cost = row.get('cost') or row.get('成本') or row.get('盈亏成本') or 0
+                current_price = row.get('current_price') or row.get('最新价') or row.get('现价') or 0
+                stop_loss = row.get('stop_loss') or row.get('止损价') or 0
+                position = row.get('position') or row.get('仓位') or 0
                 if name or code:
                     holdings.append({
                         'name': name.strip(),
                         'code': code.strip(),
-                        'sector': sector.strip()
+                        'sector': sector.strip(),
+                        'amount': float(amount) if amount else 0,
+                        'cost': float(cost) if cost else 0,
+                        'current_price': float(current_price) if current_price else 0,
+                        'stop_loss': float(stop_loss) if stop_loss else 0,
+                        'position': float(position) if position else 0,
+                        'available': float(amount) if amount else 0,
+                        'value': 0,
+                        'pnl': 0
                     })
         elif filename.endswith('.json'):
             data = json.loads(content)
@@ -768,6 +781,7 @@ def ocr_holdings():
                 'current_price': 0,
                 'value': 0,
                 'pnl': 0,
+                'stop_loss': 0,
                 'sector': ''
             })
 
