@@ -661,36 +661,86 @@ def ocr_holdings():
         import re
         from PIL import Image
         import pytesseract
-        
+
         img_path = os.path.join(DATA_DIR, 'temp_ocr.png')
         file.save(img_path)
-        
+
         img = Image.open(img_path)
-        text = pytesseract.image_to_string(img, lang='chi_sim+eng')
-        
-        pattern = r'([\u4e00-\u9fa5]{2,10})\s*([0-9]{6})\s*([0-9,]+)'
-        matches = re.findall(pattern, text)
-        
+        # 转为灰度提高识别率
+        img = img.convert('L')
+        text = pytesseract.image_to_string(img, lang='chi_sim+eng', config='--psm 6')
+
+        lines = text.split('\n')
         holdings = []
-        for match in matches:
-            name = match[0].strip()
-            code = match[1].strip()
-            amount = match[2].strip().replace(',', '')
-            if name and code:
+
+        # 多种模式匹配：证券代码（6位数字）+ 证券名称
+        # 模式1: 代码在前 "300762 上海瀚讯 1000"
+        # 模式2: 名称在前 "上海瀚讯 300762 1000"
+        # 模式3: 带分隔符 "300762, 上海瀚讯, 1000"
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            # 提取所有6位数字（股票代码）
+            codes = re.findall(r'\b(\d{6})\b', line)
+
+            # 提取中文名称（2-8个中文字符）
+            names = re.findall(r'[\u4e00-\u9fa5]{2,8}', line)
+
+            # 提取数字（可能是持仓数量）
+            amounts = re.findall(r'\b(\d{3,})\b', line)
+
+            if codes and names:
+                code = codes[0]
+                name = names[0]
+
+                # 过滤明显的非股票名称
+                if name in ['证券代码', '证券名称', '持仓', '股票', '代码', '名称', '数量', '最新价', '成本']:
+                    continue
+
+                # 补全交易所后缀
+                if code.startswith('6'):
+                    full_code = f'{code}.SH'
+                elif code.startswith(('0', '3')):
+                    full_code = f'{code}.SZ'
+                elif code.startswith(('8', '4')):
+                    full_code = f'{code}.BJ'
+                else:
+                    full_code = code
+
+                # 获取持仓数量（第一个大数字）
+                amount = 0
+                if amounts:
+                    for a in amounts:
+                        a_num = int(a.replace(',', ''))
+                        if a_num >= 100:  # 持仓至少100股
+                            amount = a_num
+                            break
+
                 holdings.append({
                     'name': name,
-                    'code': code + ('.SZ' if code.startswith('0') or code.startswith('3') else '.SH'),
-                    'amount': float(amount),
+                    'code': full_code,
+                    'amount': amount,
                     'cost': 0,
                     'current_price': 0,
                     'sector': ''
                 })
-        
+
+        # 去重（按代码）
+        seen = set()
+        unique_holdings = []
+        for h in holdings:
+            if h['code'] not in seen:
+                seen.add(h['code'])
+                unique_holdings.append(h)
+
         os.remove(img_path)
-        
-        if holdings:
-            return jsonify({'success': True, 'holdings': holdings})
-        return jsonify({'success': False, 'message': '未能识别持仓信息'})
+
+        if unique_holdings:
+            return jsonify({'success': True, 'holdings': unique_holdings, 'raw_text': text[:500]})
+        return jsonify({'success': False, 'message': '未能识别持仓信息，请尝试更清晰的图片', 'raw_text': text[:500]})
     except ImportError:
         return jsonify({'success': False, 'message': 'OCR功能需要安装pytesseract和Pillow库'})
     except Exception as e:

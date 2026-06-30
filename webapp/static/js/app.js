@@ -531,13 +531,26 @@
                         currentHoldings = [...currentHoldings, ...data.holdings];
                         await saveHoldings();
                         renderHoldings();
-                        imageResultEl.className = 'image-result';
-                        imageResultEl.innerHTML = `✓ 识别成功！共找到 ${data.holdings.length} 条持仓：<br>` + 
-                            data.holdings.map(h => `${h.name} (${h.code})`).join('<br>');
-                        showToast('识别成功，已添加到持仓列表');
+                        imageResultEl.className = 'image-result success';
+                        let html = `✓ 识别成功！共找到 ${data.holdings.length} 条持仓：<br><br>`;
+                        html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+                        html += '<tr style="background:#f0f0f0;"><th style="padding:4px;text-align:left;">名称</th><th style="padding:4px;text-align:left;">代码</th><th style="padding:4px;text-align:right;">数量</th></tr>';
+                        data.holdings.forEach(h => {
+                            html += `<tr><td style="padding:4px;">${escapeHtml(h.name)}</td><td style="padding:4px;">${escapeHtml(h.code)}</td><td style="padding:4px;text-align:right;">${h.amount || 0}</td></tr>`;
+                        });
+                        html += '</table>';
+                        if (data.raw_text) {
+                            html += `<br><details style="margin-top:8px;font-size:11px;color:#666;"><summary>查看识别原文</summary><pre style="background:#f5f5f5;padding:8px;border-radius:4px;overflow:auto;max-height:150px;">${escapeHtml(data.raw_text)}</pre></details>`;
+                        }
+                        imageResultEl.innerHTML = html;
+                        showToast(`识别成功！共 ${data.holdings.length} 条`);
                     } else {
                         imageResultEl.className = 'image-result error';
-                        imageResultEl.textContent = '✗ 未能在图片中识别到持仓信息，请尝试手动输入或使用文件导入';
+                        let html = '✗ ' + (data.message || '未能识别持仓信息');
+                        if (data.raw_text) {
+                            html += `<br><details style="margin-top:8px;font-size:11px;color:#666;"><summary>查看识别原文（用于调试）</summary><pre style="background:#f5f5f5;padding:8px;border-radius:4px;overflow:auto;max-height:200px;">${escapeHtml(data.raw_text)}</pre></details>`;
+                        }
+                        imageResultEl.innerHTML = html;
                     }
                 } catch (err) {
                     imageResultEl.className = 'image-result error';

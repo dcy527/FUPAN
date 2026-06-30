@@ -1,12 +1,20 @@
 [
   {
-    "name": "上海瀚讯",
-    "code": "300762.SZ",
     "amount": 7000,
+    "buy_date": "",
+    "code": "300762.SZ",
     "cost": 40.58,
     "current_price": 43.9,
-    "sector": "商业航天",
+    "name": "上海瀚讯",
     "pnl": 0,
-    "buy_date": ""
+    "sector": "商业航天"
+  },
+  {
+    "amount": 2083,
+    "code": "300762.SZ",
+    "cost": 0,
+    "current_price": 0,
+    "name": "证券代码",
+    "sector": ""
   }
 ]
