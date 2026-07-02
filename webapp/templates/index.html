@@ -423,6 +423,38 @@
         </main>
 
         <div id="toast" class="toast hidden"></div>
+        <div id="stop-loss-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="sl-modal-title">修改止损价</h3>
+                    <button class="modal-close" onclick="closeStopLossModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-stock-info">
+                        <span id="sl-modal-stock-name"></span>
+                        <span id="sl-modal-stock-code" class="modal-stock-code"></span>
+                    </div>
+                    <div class="form-item">
+                        <label>止损价</label>
+                        <input type="number" id="sl-modal-price" step="0.01" placeholder="请输入止损价">
+                    </div>
+                    <div class="modal-preview">
+                        <div class="preview-row">
+                            <span>当前价：</span>
+                            <span id="sl-modal-current">¥0</span>
+                        </div>
+                        <div class="preview-row">
+                            <span>距止损：</span>
+                            <span id="sl-modal-distance">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeStopLossModal()">取消</button>
+                    <button class="btn btn-primary" id="sl-modal-confirm-btn">确认修改</button>
+                </div>
+            </div>
+        </div>
         <div id="close-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">

@@ -413,23 +413,10 @@
         });
 
         listEl.querySelectorAll('.stop-loss-value').forEach(el => {
-            el.addEventListener('click', async (e) => {
+            el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const idx = parseInt(el.dataset.index);
-                const h = currentHoldings[idx];
-                if (!h) return;
-                const oldValue = parseFloat(h.stop_loss) || 0;
-                const input = prompt(`修改止损价 - ${h.name}(${h.code})`, oldValue > 0 ? oldValue.toFixed(2) : '');
-                if (input === null) return;
-                const newValue = parseFloat(input);
-                if (isNaN(newValue) || newValue < 0) {
-                    showToast('请输入有效的止损价');
-                    return;
-                }
-                currentHoldings[idx].stop_loss = newValue;
-                await saveHoldings();
-                renderHoldings();
-                showToast('止损价已更新');
+                openStopLossModal(idx);
             });
         });
 
@@ -448,6 +435,66 @@
     let modalCloseType = 'manual';
     let modalHoldingIdx = -1;
     let modalHolding = null;
+    let slModalIdx = -1;
+
+    function openStopLossModal(idx) {
+        const h = currentHoldings[idx];
+        if (!h) return;
+        slModalIdx = idx;
+
+        document.getElementById('sl-modal-stock-name').textContent = h.name;
+        document.getElementById('sl-modal-stock-code').textContent = h.code || '';
+
+        const currentPrice = parseFloat(h.current_price) || 0;
+        const stopLoss = parseFloat(h.stop_loss) || 0;
+
+        document.getElementById('sl-modal-price').value = stopLoss > 0 ? stopLoss.toFixed(2) : '';
+        document.getElementById('sl-modal-current').textContent = '¥' + currentPrice.toFixed(2);
+        updateStopLossPreview();
+
+        document.getElementById('stop-loss-modal').classList.remove('hidden');
+    }
+
+    function closeStopLossModal() {
+        document.getElementById('stop-loss-modal').classList.add('hidden');
+        slModalIdx = -1;
+    }
+
+    window.closeStopLossModal = closeStopLossModal;
+
+    function updateStopLossPreview() {
+        const price = parseFloat(document.getElementById('sl-modal-price').value) || 0;
+        const h = currentHoldings[slModalIdx];
+        if (!h) return;
+        const current = parseFloat(h.current_price) || 0;
+        const distEl = document.getElementById('sl-modal-distance');
+        if (price <= 0 || current <= 0) {
+            distEl.textContent = '--';
+            return;
+        }
+        const distance = ((current - price) / current * 100).toFixed(2);
+        if (current <= price) {
+            distEl.textContent = '已触发止损';
+            distEl.style.color = 'var(--danger)';
+        } else {
+            distEl.textContent = distance + '%';
+            distEl.style.color = '';
+        }
+    }
+
+    async function confirmStopLoss() {
+        if (slModalIdx < 0) return;
+        const value = parseFloat(document.getElementById('sl-modal-price').value);
+        if (isNaN(value) || value < 0) {
+            showToast('请输入有效的止损价');
+            return;
+        }
+        currentHoldings[slModalIdx].stop_loss = value;
+        await saveHoldings();
+        closeStopLossModal();
+        renderHoldings();
+        showToast('止损价已更新');
+    }
 
     function openCloseModal(e, closeType) {
         const idx = parseInt(e.currentTarget.dataset.index);
@@ -895,6 +942,11 @@
         document.getElementById('modal-confirm-btn').addEventListener('click', confirmClose);
     }
 
+    function initStopLossModal() {
+        document.getElementById('sl-modal-price').addEventListener('input', updateStopLossPreview);
+        document.getElementById('sl-modal-confirm-btn').addEventListener('click', confirmStopLoss);
+    }
+
     async function init() {
         initNav();
         initHoldingForm();
@@ -903,6 +955,7 @@
         initConfigForm();
         initRefreshButtons();
         initCloseModal();
+        initStopLossModal();
         initTradesPage();
 
         await loadStatus();
