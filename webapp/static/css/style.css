@@ -1122,23 +1122,25 @@ body {
 .holding-card-item-label {
     color: var(--text-light);
     margin-bottom: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
 }
 
-.stop-loss-edit-btn {
-    background: none;
-    border: none;
-    font-size: 12px;
+.stop-loss-value {
     cursor: pointer;
-    padding: 0 2px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+    position: relative;
+    padding-right: 16px;
 }
 
-.stop-loss-edit-btn:hover {
+.stop-loss-value:hover {
+    opacity: 0.8;
+}
+
+.stop-loss-edit-icon {
+    font-size: 11px;
+    opacity: 0.5;
+    margin-left: 4px;
+}
+
+.stop-loss-value:hover .stop-loss-edit-icon {
     opacity: 1;
 }
 

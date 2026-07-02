@@ -359,12 +359,10 @@
                         <div class="holding-card-item-value ${pnlClass}">${pnlSign}${pnl_rate}%</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">
-                            止损价
-                            <button class="stop-loss-edit-btn" data-index="${i}" title="修改止损价">✏️</button>
-                        </div>
-                        <div class="holding-card-item-value ${stopLossClass}">
+                        <div class="holding-card-item-label">止损价</div>
+                        <div class="holding-card-item-value ${stopLossClass} stop-loss-value" data-index="${i}" title="点击修改止损价">
                             ¥${stopLoss.toFixed(2)}
+                            <span class="stop-loss-edit-icon">✏️</span>
                             ${stopLossHint ? `<div class="stop-loss-hint">${stopLossHint}</div>` : ''}
                         </div>
                     </div>
@@ -414,10 +412,10 @@
             });
         });
 
-        listEl.querySelectorAll('.stop-loss-edit-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+        listEl.querySelectorAll('.stop-loss-value').forEach(el => {
+            el.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const idx = parseInt(e.currentTarget.dataset.index);
+                const idx = parseInt(el.dataset.index);
                 const h = currentHoldings[idx];
                 if (!h) return;
                 const oldValue = parseFloat(h.stop_loss) || 0;
