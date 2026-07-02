@@ -1,0 +1,34 @@
+[
+  {
+    "name": "新安股份",
+    "code": "600596.SH",
+    "sector": "光纤",
+    "buy_reason": "上涨中回调到20线附近买入，光纤原料",
+    "amount": 3000.0,
+    "buy_price": 15.8,
+    "close_price": 14.71,
+    "pnl": -3270.0,
+    "pnl_rate": -6.9,
+    "close_type": "loss",
+    "close_note": "",
+    "buy_date": "2026-06-29",
+    "close_date": "2026-07-02 02:38",
+    "hold_days": 3
+  },
+  {
+    "name": "宝武镁业",
+    "code": "002182.SZ",
+    "sector": "小金属",
+    "buy_reason": "底位上涨，止损价14.27",
+    "amount": 5000,
+    "buy_price": 14.27,
+    "close_price": 15.62,
+    "pnl": 6750.0,
+    "pnl_rate": 9.46,
+    "close_type": "profit",
+    "close_note": "",
+    "buy_date": "2026-06-29",
+    "close_date": "2026-07-02 02:35",
+    "hold_days": 3
+  }
+]
