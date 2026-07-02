@@ -359,7 +359,10 @@
                         <div class="holding-card-item-value ${pnlClass}">${pnlSign}${pnl_rate}%</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">止损价</div>
+                        <div class="holding-card-item-label">
+                            止损价
+                            <button class="stop-loss-edit-btn" data-index="${i}" title="修改止损价">✏️</button>
+                        </div>
                         <div class="holding-card-item-value ${stopLossClass}">
                             ¥${stopLoss.toFixed(2)}
                             ${stopLossHint ? `<div class="stop-loss-hint">${stopLossHint}</div>` : ''}
@@ -408,6 +411,27 @@
                 renderHoldings();
                 document.getElementById('holding-name').focus();
                 showToast('编辑模式：修改后点击添加即可更新');
+            });
+        });
+
+        listEl.querySelectorAll('.stop-loss-edit-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const idx = parseInt(e.currentTarget.dataset.index);
+                const h = currentHoldings[idx];
+                if (!h) return;
+                const oldValue = parseFloat(h.stop_loss) || 0;
+                const input = prompt(`修改止损价 - ${h.name}(${h.code})`, oldValue > 0 ? oldValue.toFixed(2) : '');
+                if (input === null) return;
+                const newValue = parseFloat(input);
+                if (isNaN(newValue) || newValue < 0) {
+                    showToast('请输入有效的止损价');
+                    return;
+                }
+                currentHoldings[idx].stop_loss = newValue;
+                await saveHoldings();
+                renderHoldings();
+                showToast('止损价已更新');
             });
         });
 

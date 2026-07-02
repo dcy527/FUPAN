@@ -1122,6 +1122,24 @@ body {
 .holding-card-item-label {
     color: var(--text-light);
     margin-bottom: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.stop-loss-edit-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 2px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.stop-loss-edit-btn:hover {
+    opacity: 1;
 }
 
 .holding-card-item-value {
