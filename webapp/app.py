@@ -25,6 +25,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 CONFIG_FILE = os.path.join(DATA_DIR, 'config.json')
 HOLDINGS_FILE = os.path.join(DATA_DIR, 'holdings.json')
+TRADES_FILE = os.path.join(DATA_DIR, 'trades.json')
 ARCHIVE_FILE = os.path.join(DATA_DIR, 'market_review_archive.json')
 
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -84,6 +85,14 @@ def get_holdings() -> List[Dict]:
 
 def save_holdings(holdings: List[Dict]):
     save_json(HOLDINGS_FILE, holdings)
+
+
+def get_trades() -> List[Dict]:
+    return load_json(TRADES_FILE, [])
+
+
+def save_trades(trades: List[Dict]):
+    save_json(TRADES_FILE, trades)
 
 
 class TushareMarketReview:
@@ -509,6 +518,105 @@ def api_holdings():
     elif request.method == 'DELETE':
         save_holdings([])
         return jsonify({'success': True, 'holdings': []})
+
+
+@app.route('/api/holdings/close', methods=['POST'])
+def close_holding():
+    """平仓：从持仓移除并记录到交易历史"""
+    data = request.get_json() or {}
+    idx = data.get('index')
+    close_type = data.get('close_type', 'manual')  # profit / loss / manual
+    close_price = data.get('close_price', 0)
+    close_note = data.get('close_note', '')
+
+    if idx is None:
+        return jsonify({'success': False, 'message': '缺少持仓索引'})
+
+    holdings = get_holdings()
+    if idx < 0 or idx >= len(holdings):
+        return jsonify({'success': False, 'message': '持仓索引无效'})
+
+    h = holdings.pop(idx)
+
+    buy_price = float(h.get('cost', 0) or 0)
+    amount = float(h.get('amount', 0) or 0)
+    current_price = float(close_price) if close_price else float(h.get('current_price', 0) or 0)
+    pnl = (current_price - buy_price) * amount if buy_price and amount else float(h.get('pnl', 0) or 0)
+    pnl_rate = ((current_price - buy_price) / buy_price * 100) if buy_price else 0
+
+    buy_date = h.get('buy_date', '')
+    hold_days = 0
+    if buy_date:
+        try:
+            from datetime import datetime as dt
+            d1 = dt.strptime(buy_date, '%Y-%m-%d')
+            d2 = dt.now()
+            hold_days = (d2 - d1).days
+        except Exception:
+            pass
+
+    trade = {
+        'name': h.get('name', ''),
+        'code': h.get('code', ''),
+        'sector': h.get('sector', ''),
+        'buy_reason': h.get('buy_reason', ''),
+        'amount': amount,
+        'buy_price': buy_price,
+        'close_price': current_price,
+        'pnl': round(pnl, 2),
+        'pnl_rate': round(pnl_rate, 2),
+        'close_type': close_type,
+        'close_note': close_note,
+        'buy_date': buy_date,
+        'close_date': datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'hold_days': hold_days
+    }
+
+    trades = get_trades()
+    trades.insert(0, trade)
+    save_trades(trades)
+    save_holdings(holdings)
+
+    return jsonify({'success': True, 'trade': trade, 'holdings': holdings})
+
+
+@app.route('/api/trades', methods=['GET', 'DELETE'])
+def api_trades():
+    if request.method == 'GET':
+        return jsonify(get_trades())
+    elif request.method == 'DELETE':
+        save_trades([])
+        return jsonify({'success': True})
+
+
+@app.route('/api/trades/stats')
+def trades_stats():
+    trades = get_trades()
+    total = len(trades)
+    if total == 0:
+        return jsonify({
+            'total': 0, 'wins': 0, 'losses': 0,
+            'win_rate': 0, 'total_pnl': 0, 'avg_pnl': 0,
+            'avg_hold_days': 0, 'best_trade': 0, 'worst_trade': 0
+        })
+
+    wins = sum(1 for t in trades if float(t.get('pnl', 0)) > 0)
+    losses = sum(1 for t in trades if float(t.get('pnl', 0)) < 0)
+    total_pnl = sum(float(t.get('pnl', 0)) for t in trades)
+    pnls = [float(t.get('pnl', 0)) for t in trades]
+    hold_days_list = [int(t.get('hold_days', 0)) for t in trades if t.get('hold_days')]
+
+    return jsonify({
+        'total': total,
+        'wins': wins,
+        'losses': losses,
+        'win_rate': round(wins / total * 100, 1),
+        'total_pnl': round(total_pnl, 2),
+        'avg_pnl': round(total_pnl / total, 2),
+        'avg_hold_days': round(sum(hold_days_list) / len(hold_days_list), 1) if hold_days_list else 0,
+        'best_trade': max(pnls),
+        'worst_trade': min(pnls)
+    })
 
 
 @app.route('/api/holdings/upload', methods=['POST'])

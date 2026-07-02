@@ -1175,7 +1175,9 @@ body {
 }
 
 .holding-card-btn-edit,
-.holding-card-btn-delete {
+.holding-card-btn-delete,
+.holding-card-btn-profit,
+.holding-card-btn-loss {
     padding: 5px 14px;
     border: 1px solid var(--border);
     background: white;
@@ -1202,6 +1204,26 @@ body {
 
 .holding-card-btn-delete:hover {
     background: var(--danger);
+    color: white;
+}
+
+.holding-card-btn-profit {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+.holding-card-btn-profit:hover {
+    background: var(--success);
+    color: white;
+}
+
+.holding-card-btn-loss {
+    color: var(--warning);
+    border-color: var(--warning);
+}
+
+.holding-card-btn-loss:hover {
+    background: var(--warning);
     color: white;
 }
 
@@ -1238,4 +1260,145 @@ body {
 
 .field-hint.error {
     color: var(--danger);
+}
+
+/* ============ 交易记录卡片 ============ */
+.trade-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.trade-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.trade-card-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.trade-type-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+}
+
+.trade-type-profit {
+    background: var(--success);
+}
+
+.trade-type-loss {
+    background: var(--danger);
+}
+
+.trade-type-manual {
+    background: var(--text-light);
+}
+
+.trade-card-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.trade-card-code {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.trade-card-sector {
+    display: inline-block;
+    padding: 1px 8px;
+    background: #eaf2f8;
+    color: #2980b9;
+    border-radius: 12px;
+    font-size: 11px;
+}
+
+.trade-card-pnl {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.trade-card-pnl-value {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.trade-card-pnl-rate {
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.trade-card-pnl.positive {
+    color: var(--success);
+}
+
+.trade-card-pnl.negative {
+    color: var(--danger);
+}
+
+.trade-card-reason {
+    background: #fff8e1;
+    border-left: 3px solid var(--warning);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #795548;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+
+.trade-card-reason .reason-label {
+    font-weight: 600;
+    color: #e65100;
+}
+
+.trade-card-body {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.trade-card-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trade-card-item .label {
+    font-size: 11px;
+    color: var(--text-light);
+}
+
+.trade-card-item .value {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.trade-card-note {
+    background: #f0f7ff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--secondary);
+    margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+    .trade-card-body {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

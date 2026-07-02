@@ -19,6 +19,7 @@
                 <button class="nav-btn active" data-page="daily">每日复盘</button>
                 <button class="nav-btn" data-page="weekly">每周复盘</button>
                 <button class="nav-btn" data-page="holdings">持仓管理</button>
+                <button class="nav-btn" data-page="trades">交易记录</button>
                 <button class="nav-btn" data-page="settings">设置</button>
             </nav>
         </header>
@@ -335,6 +336,42 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section id="page-trades" class="page">
+                <div class="page-header">
+                    <h2>交易记录</h2>
+                    <button id="btn-clear-trades" class="btn btn-sm" style="color:var(--danger);border-color:var(--danger);">清空记录</button>
+                </div>
+
+                <div class="summary-bar" id="trades-stats-bar" style="margin-bottom:16px;">
+                    <div class="summary-item">
+                        <div class="summary-label">总交易</div>
+                        <div class="summary-value" id="trade-total">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">胜率</div>
+                        <div class="summary-value" id="trade-winrate">0%</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">总盈亏</div>
+                        <div class="summary-value" id="trade-total-pnl">¥0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">平均盈亏</div>
+                        <div class="summary-value" id="trade-avg-pnl">¥0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">平均持仓(天)</div>
+                        <div class="summary-value" id="trade-avg-days">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">最佳/最差</div>
+                        <div class="summary-value" id="trade-best-worst" style="font-size:14px;">0 / 0</div>
+                    </div>
+                </div>
+
+                <div id="trades-list"></div>
             </section>
 
             <section id="page-settings" class="page">

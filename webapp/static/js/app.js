@@ -70,6 +70,7 @@
                 if (pageName === 'daily') loadDailyReview();
                 if (pageName === 'weekly') loadWeeklyReview();
                 if (pageName === 'holdings') loadHoldings();
+                if (pageName === 'trades') loadTrades();
                 if (pageName === 'settings') loadConfig();
             });
         });
@@ -366,6 +367,8 @@
                     </div>
                 </div>
                 <div class="holding-card-actions">
+                    <button class="holding-card-btn-profit" data-index="${i}">止盈</button>
+                    <button class="holding-card-btn-loss" data-index="${i}">止损</button>
                     <button class="holding-card-btn-edit" data-index="${i}">编辑</button>
                     <button class="holding-card-btn-delete" data-index="${i}">删除</button>
                 </div>
@@ -408,7 +411,59 @@
             });
         });
 
+        listEl.querySelectorAll('.holding-card-btn-profit').forEach(btn => {
+            btn.addEventListener('click', (e) => handleClose(e, 'profit'));
+        });
+
+        listEl.querySelectorAll('.holding-card-btn-loss').forEach(btn => {
+            btn.addEventListener('click', (e) => handleClose(e, 'loss'));
+        });
+
         updateSummary();
+    }
+
+    async function handleClose(e, closeType) {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        const h = currentHoldings[idx];
+        if (!h) return;
+
+        const defaultPrice = parseFloat(h.current_price) || 0;
+        const typeText = closeType === 'profit' ? '止盈' : '止损';
+        const priceInput = prompt(`${typeText}平仓 - ${h.name}(${h.code})\n请输入平仓价格：`, defaultPrice.toFixed(2));
+        if (priceInput === null) return;
+
+        const closePrice = parseFloat(priceInput) || 0;
+        if (closePrice <= 0) {
+            showToast('平仓价格必须大于0');
+            return;
+        }
+
+        const note = prompt(`${typeText}备注（可选）：`, '') || '';
+
+        try {
+            const res = await fetch('/api/holdings/close', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    index: idx,
+                    close_type: closeType,
+                    close_price: closePrice,
+                    close_note: note
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                currentHoldings = data.holdings;
+                renderHoldings();
+                const pnl = data.trade.pnl;
+                const pnlStr = pnl >= 0 ? `+¥${pnl}` : `-¥${Math.abs(pnl)}`;
+                showToast(`${typeText}成功！盈亏：${pnlStr}（已记录到交易历史）`);
+            } else {
+                showToast('平仓失败：' + data.message);
+            }
+        } catch (err) {
+            showToast('平仓失败：' + err.message);
+        }
     }
 
     async function saveHoldings() {
@@ -724,9 +779,95 @@
         initClearHoldings();
         initConfigForm();
         initRefreshButtons();
+        initTradesPage();
 
         await loadStatus();
         await loadDailyReview();
+    }
+
+    // ============ 交易记录 ============
+    let currentTrades = [];
+
+    async function loadTrades() {
+        const listEl = document.getElementById('trades-list');
+        listEl.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:20px;">加载中...</p>';
+
+        const [trades, stats] = await Promise.all([
+            fetchJSON('/api/trades'),
+            fetchJSON('/api/trades/stats')
+        ]);
+
+        currentTrades = trades;
+        renderTradesStats(stats);
+        renderTrades(trades);
+    }
+
+    function renderTradesStats(stats) {
+        document.getElementById('trade-total').textContent = stats.total;
+        document.getElementById('trade-winrate').textContent = stats.win_rate + '%';
+        const totalPnlEl = document.getElementById('trade-total-pnl');
+        totalPnlEl.textContent = (stats.total_pnl >= 0 ? '+' : '') + '¥' + stats.total_pnl.toLocaleString();
+        totalPnlEl.className = 'summary-value ' + (stats.total_pnl >= 0 ? 'positive' : 'negative');
+        const avgPnlEl = document.getElementById('trade-avg-pnl');
+        avgPnlEl.textContent = (stats.avg_pnl >= 0 ? '+' : '') + '¥' + stats.avg_pnl.toLocaleString();
+        avgPnlEl.className = 'summary-value ' + (stats.avg_pnl >= 0 ? 'positive' : 'negative');
+        document.getElementById('trade-avg-days').textContent = stats.avg_hold_days;
+        document.getElementById('trade-best-worst').textContent =
+            '+' + stats.best_trade + ' / ' + stats.worst_trade;
+    }
+
+    function renderTrades(trades) {
+        const listEl = document.getElementById('trades-list');
+
+        if (!trades || trades.length === 0) {
+            listEl.innerHTML = '<div class="empty-state"><p>暂无交易记录</p><p style="font-size:12px;margin-top:8px;">在持仓管理中点击"止盈"或"止损"会自动记录到这里</p></div>';
+            return;
+        }
+
+        listEl.innerHTML = trades.map(t => {
+            const pnl = parseFloat(t.pnl) || 0;
+            const pnlClass = pnl >= 0 ? 'positive' : 'negative';
+            const pnlSign = pnl >= 0 ? '+' : '';
+            const typeText = t.close_type === 'profit' ? '止盈' : t.close_type === 'loss' ? '止损' : '手动';
+            const typeClass = t.close_type === 'profit' ? 'trade-type-profit' : t.close_type === 'loss' ? 'trade-type-loss' : 'trade-type-manual';
+
+            return `
+            <div class="trade-card">
+                <div class="trade-card-header">
+                    <div class="trade-card-title">
+                        <span class="trade-type-badge ${typeClass}">${typeText}</span>
+                        <span class="trade-card-name">${escapeHtml(t.name)}</span>
+                        <span class="trade-card-code">${escapeHtml(t.code || '')}</span>
+                        ${t.sector ? `<span class="trade-card-sector">${escapeHtml(t.sector)}</span>` : ''}
+                    </div>
+                    <div class="trade-card-pnl ${pnlClass}">
+                        <div class="trade-card-pnl-value">${pnlSign}¥${pnl.toLocaleString()}</div>
+                        <div class="trade-card-pnl-rate">${pnlSign}${t.pnl_rate}%</div>
+                    </div>
+                </div>
+                ${t.buy_reason ? `<div class="trade-card-reason"><span class="reason-label">买入逻辑：</span>${escapeHtml(t.buy_reason)}</div>` : ''}
+                <div class="trade-card-body">
+                    <div class="trade-card-item"><span class="label">买入价</span><span class="value">¥${parseFloat(t.buy_price || 0).toFixed(3)}</span></div>
+                    <div class="trade-card-item"><span class="label">卖出价</span><span class="value">¥${parseFloat(t.close_price || 0).toFixed(2)}</span></div>
+                    <div class="trade-card-item"><span class="label">数量</span><span class="value">${parseFloat(t.amount || 0).toLocaleString()}</span></div>
+                    <div class="trade-card-item"><span class="label">买入日</span><span class="value">${t.buy_date || '-'}</span></div>
+                    <div class="trade-card-item"><span class="label">卖出日</span><span class="value">${t.close_date || '-'}</span></div>
+                    <div class="trade-card-item"><span class="label">持仓天数</span><span class="value">${t.hold_days}天</span></div>
+                </div>
+                ${t.close_note ? `<div class="trade-card-note">📝 ${escapeHtml(t.close_note)}</div>` : ''}
+            </div>
+            `;
+        }).join('');
+    }
+
+    function initTradesPage() {
+        document.getElementById('btn-clear-trades').addEventListener('click', async () => {
+            if (confirm('确定要清空所有交易记录吗？此操作不可撤销。')) {
+                await fetchJSON('/api/trades', { method: 'DELETE' });
+                await loadTrades();
+                showToast('交易记录已清空');
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', init);
