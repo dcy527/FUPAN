@@ -423,6 +423,49 @@
         </main>
 
         <div id="toast" class="toast hidden"></div>
+        <div id="close-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">确认平仓</h3>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-stock-info">
+                        <span id="modal-stock-name"></span>
+                        <span id="modal-stock-code" class="modal-stock-code"></span>
+                    </div>
+                    <div class="form-item">
+                        <label>卖出价格</label>
+                        <input type="number" id="modal-price" step="0.01" placeholder="卖出价格">
+                    </div>
+                    <div class="form-item">
+                        <label>卖出数量（持仓：<span id="modal-total-amount">0</span>股）</label>
+                        <div class="amount-input-row">
+                            <input type="number" id="modal-amount" placeholder="卖出数量，留空全部卖出">
+                            <button class="btn btn-secondary btn-sm" id="modal-all-btn">全部</button>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label>备注（可选）</label>
+                        <textarea id="modal-note" rows="2" placeholder="平仓备注"></textarea>
+                    </div>
+                    <div class="modal-preview">
+                        <div class="preview-row">
+                            <span>预计盈亏：</span>
+                            <span id="modal-preview-pnl" class="preview-pnl">¥0</span>
+                        </div>
+                        <div class="preview-row">
+                            <span>盈亏比例：</span>
+                            <span id="modal-preview-rate">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button class="btn btn-primary" id="modal-confirm-btn">确认平仓</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="/static/js/app.js"></script>

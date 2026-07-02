@@ -412,58 +412,145 @@
         });
 
         listEl.querySelectorAll('.holding-card-btn-profit').forEach(btn => {
-            btn.addEventListener('click', (e) => handleClose(e, 'profit'));
+            btn.addEventListener('click', (e) => openCloseModal(e, 'profit'));
         });
 
         listEl.querySelectorAll('.holding-card-btn-loss').forEach(btn => {
-            btn.addEventListener('click', (e) => handleClose(e, 'loss'));
+            btn.addEventListener('click', (e) => openCloseModal(e, 'loss'));
         });
 
         updateSummary();
     }
 
-    async function handleClose(e, closeType) {
+    // 弹框相关
+    let modalCloseType = 'manual';
+    let modalHoldingIdx = -1;
+    let modalHolding = null;
+
+    function openCloseModal(e, closeType) {
         const idx = parseInt(e.currentTarget.dataset.index);
         const h = currentHoldings[idx];
         if (!h) return;
 
-        const defaultPrice = parseFloat(h.current_price) || 0;
-        const typeText = closeType === 'profit' ? '止盈' : '止损';
-        const priceInput = prompt(`${typeText}平仓 - ${h.name}(${h.code})\n请输入平仓价格：`, defaultPrice.toFixed(2));
-        if (priceInput === null) return;
+        modalCloseType = closeType;
+        modalHoldingIdx = idx;
+        modalHolding = h;
 
-        const closePrice = parseFloat(priceInput) || 0;
-        if (closePrice <= 0) {
-            showToast('平仓价格必须大于0');
+        const typeText = closeType === 'profit' ? '止盈平仓' : '止损平仓';
+        document.getElementById('modal-title').textContent = typeText;
+        document.getElementById('modal-stock-name').textContent = h.name;
+        document.getElementById('modal-stock-code').textContent = h.code || '';
+        document.getElementById('modal-total-amount').textContent = h.amount || 0;
+
+        // 尝试获取实时价格
+        fetchRealtimePrice(h.code, (price) => {
+            document.getElementById('modal-price').value = price.toFixed(2);
+            updateModalPreview();
+        }, () => {
+            const defaultPrice = parseFloat(h.current_price) || 0;
+            document.getElementById('modal-price').value = defaultPrice.toFixed(2);
+            updateModalPreview();
+        });
+
+        document.getElementById('modal-amount').value = '';
+        document.getElementById('modal-note').value = '';
+        document.getElementById('close-modal').classList.remove('hidden');
+    }
+
+    async function fetchRealtimePrice(code, onSuccess, onFail) {
+        try {
+            const res = await fetch(`/api/price?code=${encodeURIComponent(code)}`);
+            const data = await res.json();
+            if (data.success && data.price > 0) {
+                onSuccess(data.price);
+            } else {
+                onFail();
+            }
+        } catch (e) {
+            onFail();
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('close-modal').classList.add('hidden');
+        modalHoldingIdx = -1;
+        modalHolding = null;
+    }
+
+    // 暴露给 HTML onclick
+    window.closeModal = closeModal;
+
+    function updateModalPreview() {
+        if (!modalHolding) return;
+
+        const price = parseFloat(document.getElementById('modal-price').value) || 0;
+        const totalAmount = parseFloat(modalHolding.amount) || 0;
+        const sellAmount = parseFloat(document.getElementById('modal-amount').value) || totalAmount;
+        const buyPrice = parseFloat(modalHolding.cost) || 0;
+
+        if (price <= 0 || buyPrice <= 0) {
+            document.getElementById('modal-preview-pnl').textContent = '¥--';
+            document.getElementById('modal-preview-rate').textContent = '--%';
             return;
         }
 
-        const note = prompt(`${typeText}备注（可选）：`, '') || '';
+        const actualSell = sellAmount > totalAmount ? totalAmount : sellAmount;
+        const pnl = (price - buyPrice) * actualSell;
+        const pnlRate = ((price - buyPrice) / buyPrice * 100);
+
+        const pnlEl = document.getElementById('modal-preview-pnl');
+        pnlEl.textContent = (pnl >= 0 ? '+' : '') + '¥' + pnl.toFixed(2);
+        pnlEl.className = 'preview-pnl ' + (pnl >= 0 ? 'positive' : 'negative');
+
+        document.getElementById('modal-preview-rate').textContent = (pnlRate >= 0 ? '+' : '') + pnlRate.toFixed(2) + '%';
+    }
+
+    async function confirmClose() {
+        if (modalHoldingIdx < 0 || !modalHolding) return;
+
+        const closePrice = parseFloat(document.getElementById('modal-price').value) || 0;
+        if (closePrice <= 0) {
+            showToast('卖出价格必须大于0');
+            return;
+        }
+
+        const sellAmount = parseFloat(document.getElementById('modal-amount').value) || 0;
+        const note = document.getElementById('modal-note').value.trim();
+
+        const typeText = modalCloseType === 'profit' ? '止盈' : '止损';
 
         try {
             const res = await fetch('/api/holdings/close', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    index: idx,
-                    close_type: closeType,
+                    index: modalHoldingIdx,
+                    close_type: modalCloseType,
                     close_price: closePrice,
-                    close_note: note
+                    close_note: note,
+                    amount: sellAmount
                 })
             });
             const data = await res.json();
             if (data.success) {
+                closeModal();
                 currentHoldings = data.holdings;
                 renderHoldings();
                 const pnl = data.trade.pnl;
-                const pnlStr = pnl >= 0 ? `+¥${pnl}` : `-¥${Math.abs(pnl)}`;
-                showToast(`${typeText}成功！盈亏：${pnlStr}（已记录到交易历史）`);
+                const pnlStr = pnl >= 0 ? `+¥${pnl.toFixed(2)}` : `-¥${Math.abs(pnl).toFixed(2)}`;
+                const amountText = data.is_full ? '全部' : `部分(${data.trade.amount}股)`;
+                showToast(`${typeText}${amountText}卖出成功！盈亏：${pnlStr}`);
             } else {
                 showToast('平仓失败：' + data.message);
             }
         } catch (err) {
             showToast('平仓失败：' + err.message);
         }
+    }
+
+    async function handleClose(e, closeType) {
+        // 已改用弹框，此函数保留备用
+        openCloseModal(e, closeType);
     }
 
     async function saveHoldings() {
@@ -772,6 +859,20 @@
         document.getElementById('btn-refresh-weekly').addEventListener('click', loadWeeklyReview);
     }
 
+    function initCloseModal() {
+        // 价格变化时更新预览
+        document.getElementById('modal-price').addEventListener('input', updateModalPreview);
+        // 数量变化时更新预览
+        document.getElementById('modal-amount').addEventListener('input', updateModalPreview);
+        // 全部按钮
+        document.getElementById('modal-all-btn').addEventListener('click', () => {
+            document.getElementById('modal-amount').value = document.getElementById('modal-total-amount').textContent;
+            updateModalPreview();
+        });
+        // 确认按钮
+        document.getElementById('modal-confirm-btn').addEventListener('click', confirmClose);
+    }
+
     async function init() {
         initNav();
         initHoldingForm();
@@ -779,6 +880,7 @@
         initClearHoldings();
         initConfigForm();
         initRefreshButtons();
+        initCloseModal();
         initTradesPage();
 
         await loadStatus();

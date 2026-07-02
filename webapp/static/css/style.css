@@ -1402,3 +1402,137 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* ============ 弹框样式 ============ */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text);
+}
+
+.modal-body {
+    padding: 16px;
+}
+
+.modal-stock-info {
+    margin-bottom: 14px;
+}
+
+.modal-stock-info span:first-child {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-stock-code {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-left: 8px;
+}
+
+.amount-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.amount-input-row input {
+    flex: 1;
+}
+
+.modal-preview {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 14px;
+}
+
+.preview-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.preview-row:last-child {
+    margin-bottom: 0;
+}
+
+.preview-pnl {
+    font-weight: 600;
+}
+
+.preview-pnl.positive {
+    color: var(--success);
+}
+
+.preview-pnl.negative {
+    color: var(--danger);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+}

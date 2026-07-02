@@ -522,12 +522,13 @@ def api_holdings():
 
 @app.route('/api/holdings/close', methods=['POST'])
 def close_holding():
-    """平仓：从持仓移除并记录到交易历史"""
+    """平仓：支持部分卖出，记录到交易历史"""
     data = request.get_json() or {}
     idx = data.get('index')
     close_type = data.get('close_type', 'manual')  # profit / loss / manual
     close_price = data.get('close_price', 0)
     close_note = data.get('close_note', '')
+    sell_amount = data.get('amount', 0)  # 卖出数量，0表示全部卖出
 
     if idx is None:
         return jsonify({'success': False, 'message': '缺少持仓索引'})
@@ -536,12 +537,20 @@ def close_holding():
     if idx < 0 or idx >= len(holdings):
         return jsonify({'success': False, 'message': '持仓索引无效'})
 
-    h = holdings.pop(idx)
-
+    h = holdings[idx]
     buy_price = float(h.get('cost', 0) or 0)
-    amount = float(h.get('amount', 0) or 0)
+    total_amount = float(h.get('amount', 0) or 0)
     current_price = float(close_price) if close_price else float(h.get('current_price', 0) or 0)
-    pnl = (current_price - buy_price) * amount if buy_price and amount else float(h.get('pnl', 0) or 0)
+
+    # 确定卖出数量：未指定或超过持仓量则全部卖出
+    if sell_amount <= 0 or sell_amount >= total_amount:
+        sell_amount = total_amount
+        is_full = True
+    else:
+        is_full = False
+
+    # 计算盈亏
+    pnl = (current_price - buy_price) * sell_amount if buy_price else 0
     pnl_rate = ((current_price - buy_price) / buy_price * 100) if buy_price else 0
 
     buy_date = h.get('buy_date', '')
@@ -560,7 +569,7 @@ def close_holding():
         'code': h.get('code', ''),
         'sector': h.get('sector', ''),
         'buy_reason': h.get('buy_reason', ''),
-        'amount': amount,
+        'amount': sell_amount,
         'buy_price': buy_price,
         'close_price': current_price,
         'pnl': round(pnl, 2),
@@ -575,9 +584,17 @@ def close_holding():
     trades = get_trades()
     trades.insert(0, trade)
     save_trades(trades)
+
+    # 更新或移除持仓
+    if is_full:
+        holdings.pop(idx)
+    else:
+        h['amount'] = total_amount - sell_amount
+        holdings[idx] = h
+
     save_holdings(holdings)
 
-    return jsonify({'success': True, 'trade': trade, 'holdings': holdings})
+    return jsonify({'success': True, 'trade': trade, 'holdings': holdings, 'is_full': is_full})
 
 
 @app.route('/api/trades', methods=['GET', 'DELETE'])
