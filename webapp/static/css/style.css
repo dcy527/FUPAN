@@ -1145,8 +1145,8 @@ body {
 }
 
 .stop-loss-label-profit {
-    color: var(--success);
-    font-weight: 500;
+    color: #e74c3c;
+    font-weight: 600;
 }
 
 .holding-card-item-value {

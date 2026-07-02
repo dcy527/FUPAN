@@ -15,18 +15,18 @@
     "stop_loss": 28
   },
   {
-    "name": "永兴材料",
-    "code": "002756.SZ",
     "amount": 500,
     "available": 500,
-    "position": 2,
-    "current_price": 62.45,
-    "cost": 62.4,
-    "pnl": 0,
-    "stop_loss": 59,
-    "sector": "小金属",
-    "buy_reason": "li dian 20ri",
     "buy_date": "2026-07-02",
-    "price_source": "实时行情(新浪)"
+    "buy_reason": "li dian 20ri",
+    "code": "002756.SZ",
+    "cost": 62.4,
+    "current_price": 62.45,
+    "name": "永兴材料",
+    "pnl": 0,
+    "position": 2,
+    "price_source": "实时行情(新浪)",
+    "sector": "小金属",
+    "stop_loss": 63.4
   }
 ]
