@@ -1144,6 +1144,11 @@ body {
     opacity: 1;
 }
 
+.stop-loss-label-profit {
+    color: var(--success);
+    font-weight: 500;
+}
+
 .holding-card-item-value {
     font-weight: 500;
 }

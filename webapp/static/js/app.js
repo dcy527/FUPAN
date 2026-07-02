@@ -303,8 +303,11 @@
 
             const currentPrice = parseFloat(h.current_price) || 0;
             const stopLoss = parseFloat(h.stop_loss) || 0;
+            const buyPrice = parseFloat(h.cost) || 0;
             let stopLossClass = '';
             let stopLossHint = '';
+            let stopLossLabel = '止损价';
+            let stopLossLabelClass = '';
             if (stopLoss > 0 && currentPrice > 0) {
                 const distance = ((currentPrice - stopLoss) / currentPrice * 100).toFixed(2);
                 if (currentPrice <= stopLoss) {
@@ -315,6 +318,12 @@
                     stopLossHint = `距止损 ${distance}%`;
                 } else {
                     stopLossHint = `距止损 ${distance}%`;
+                }
+            }
+            if (stopLoss > 0 && buyPrice > 0) {
+                if (stopLoss > buyPrice) {
+                    stopLossLabel = '止盈价';
+                    stopLossLabelClass = 'stop-loss-label-profit';
                 }
             }
 
@@ -359,7 +368,7 @@
                         <div class="holding-card-item-value ${pnlClass}">${pnlSign}${pnl_rate}%</div>
                     </div>
                     <div class="holding-card-item">
-                        <div class="holding-card-item-label">止损价</div>
+                        <div class="holding-card-item-label ${stopLossLabelClass}">${stopLossLabel}</div>
                         <div class="holding-card-item-value ${stopLossClass} stop-loss-value" data-index="${i}" title="点击修改止损价">
                             ¥${stopLoss.toFixed(2)}
                             <span class="stop-loss-edit-icon">✏️</span>
