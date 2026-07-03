@@ -203,20 +203,83 @@ class TushareMarketReview:
             return None
 
     def _analyze_moneyflow_streak(self, days: int = 7, min_streak: int = 3):
-        """分析连续净流入的板块，返回排名列表"""
+        """分析连续净流入的板块，返回排名列表。优先Tushare，降级到akshare，最后模拟数据。"""
+        # 第一层：Tushare
         df = self.get_moneyflow_industry_history(days)
-        if df is None or df.empty:
-            # 数据获取失败，回退到模拟数据
-            mock_data = [
-                {'name': 'AI算力', 'streak': 5, 'recent_net': 38520.45, 'total_net': 45230.10, 'avg_change': 2.35, 'close': 1258.36, 'days_count': 5},
-                {'name': '商业航天', 'streak': 4, 'recent_net': 28150.20, 'total_net': 32100.80, 'avg_change': 1.98, 'close': 1102.45, 'days_count': 5},
-                {'name': '半导体', 'streak': 3, 'recent_net': 18650.75, 'total_net': 20340.50, 'avg_change': 1.56, 'close': 986.23, 'days_count': 5},
-                {'name': '机器人', 'streak': 3, 'recent_net': 12480.30, 'total_net': 15200.60, 'avg_change': 1.23, 'close': 823.45, 'days_count': 5},
-                {'name': '消费电子', 'streak': 3, 'recent_net': 8320.15, 'total_net': 9850.40, 'avg_change': 0.89, 'close': 712.56, 'days_count': 5},
-            ]
-            return mock_data, "资金流向数据获取失败（网络受限或积分不足），以下为模拟数据展示"
+        if df is not None and not df.empty:
+            return self._parse_moneyflow_df(df, days, min_streak)
 
-        # 确保有净流入字段
+        # 第二层：akshare 降级
+        ak_result, ak_msg = self._analyze_moneyflow_streak_akshare(min_streak)
+        if ak_result:
+            return ak_result, ak_msg
+
+        # 第三层：模拟数据
+        mock_data = [
+            {'name': 'AI算力', 'streak': 5, 'recent_net': 38520.45, 'total_net': 45230.10, 'avg_change': 2.35, 'close': 1258.36, 'days_count': 5},
+            {'name': '商业航天', 'streak': 4, 'recent_net': 28150.20, 'total_net': 32100.80, 'avg_change': 1.98, 'close': 1102.45, 'days_count': 5},
+            {'name': '半导体', 'streak': 3, 'recent_net': 18650.75, 'total_net': 20340.50, 'avg_change': 1.56, 'close': 986.23, 'days_count': 5},
+            {'name': '机器人', 'streak': 3, 'recent_net': 12480.30, 'total_net': 15200.60, 'avg_change': 1.23, 'close': 823.45, 'days_count': 5},
+            {'name': '消费电子', 'streak': 3, 'recent_net': 8320.15, 'total_net': 9850.40, 'avg_change': 0.89, 'close': 712.56, 'days_count': 5},
+        ]
+        return mock_data, "Tushare/akshare均不可用（网络受限或无积分），以下为模拟数据展示"
+
+    def _analyze_moneyflow_streak_akshare(self, min_streak: int = 3):
+        """使用akshare获取板块资金流向，作为Tushare的降级方案"""
+        try:
+            import akshare as ak
+            # 获取5日行业板块资金流向排行
+            df_5d = ak.stock_sector_fund_flow_rank(indicator="5日", sector_type="行业")
+            if df_5d is None or df_5d.empty:
+                return None, "akshare获取5日资金流向为空"
+
+            # 同时获取今日资金流向做交叉验证
+            df_today = ak.stock_sector_fund_flow_rank(indicator="今日", sector_type="行业")
+
+            results = []
+            for _, row in df_5d.iterrows():
+                name = str(row.get('板块名称', ''))
+                net_5d = float(row.get('主力净流入-净额', 0))
+                # 5日净流入必须为正
+                if net_5d <= 0:
+                    continue
+
+                # 交叉验证：今日是否也为正流入
+                today_inflow = True
+                if df_today is not None and not df_today.empty:
+                    today_row = df_today[df_today['板块名称'] == name]
+                    if not today_row.empty:
+                        today_net = float(today_row.iloc[0].get('主力净流入-净额', 0))
+                        if today_net <= 0:
+                            today_inflow = False
+
+                # 如果今日也是正流入，说明至少有连续2日以上，视为连续流入
+                # 5日累计为正 + 今日为正，近似认为连续3日以上
+                streak = 5 if today_inflow else 3
+                if streak < min_streak:
+                    continue
+
+                chg = float(row.get('涨跌幅', 0))
+                results.append({
+                    'name': name,
+                    'streak': streak,
+                    'recent_net': round(net_5d / 10000, 2),  # 元转万元
+                    'total_net': round(net_5d / 10000, 2),
+                    'avg_change': round(chg, 2),
+                    'close': 0,
+                    'days_count': 5
+                })
+
+            # 排序：先按连续天数，再按净流入金额
+            results.sort(key=lambda x: (x['streak'], x['recent_net']), reverse=True)
+            if not results:
+                return None, "akshare未找到符合条件的板块"
+            return results, ""
+        except Exception as e:
+            return None, f"akshare获取失败: {e}"
+
+    def _parse_moneyflow_df(self, df, days: int, min_streak: int):
+        """解析Tushare资金流向DataFrame"""
         net_col = None
         for col in ['net_amount', 'netflow_amount', 'main_net_amount']:
             if col in df.columns:
@@ -225,12 +288,10 @@ class TushareMarketReview:
         if net_col is None:
             return [], "资金流向数据字段缺失"
 
-        # 取最近 min_streak 个交易日（确保至少能判断连续性）
         recent_dates = sorted(df['trade_date'].unique())[-(days if days >= min_streak else min_streak):]
         df_recent = df[df['trade_date'].isin(recent_dates)].copy()
         df_recent['is_inflow'] = df_recent[net_col].astype(float) > 0
 
-        # 按行业分组，计算连续流入天数、累计净流入、平均涨跌幅
         results = []
         name_col = 'name' if 'name' in df_recent.columns else 'industry_name'
         if name_col not in df_recent.columns:
@@ -241,7 +302,6 @@ class TushareMarketReview:
             if len(group) < min_streak:
                 continue
 
-            # 计算当前连续净流入天数（从最近一天往前数）
             streak = 0
             for _, row in group.iloc[::-1].iterrows():
                 if row['is_inflow']:
@@ -252,27 +312,22 @@ class TushareMarketReview:
             if streak < min_streak:
                 continue
 
-            # 累计净流入（连续流入期间）
             recent_inflow = group.iloc[-streak:][net_col].astype(float).sum()
-            # 总净流入（统计区间内）
             total_net = group[net_col].astype(float).sum()
-            # 平均涨跌幅
             pct_col = 'pct_change' if 'pct_change' in group.columns else 'pct_chg'
             avg_chg = float(group[pct_col].astype(float).mean()) if pct_col in group.columns else 0
-            # 最新收盘价
             close = float(group.iloc[-1].get('close', 0)) if 'close' in group.columns else 0
 
             results.append({
                 'name': str(name),
                 'streak': streak,
-                'recent_net': round(float(recent_inflow) / 10000, 2),  # 转为万元
+                'recent_net': round(float(recent_inflow) / 10000, 2),
                 'total_net': round(float(total_net) / 10000, 2),
                 'avg_change': round(avg_chg, 2),
                 'close': round(close, 2),
                 'days_count': len(group)
             })
 
-        # 排序：先按连续天数降序，再按连续期间累计净流入降序
         results.sort(key=lambda x: (x['streak'], x['recent_net']), reverse=True)
         return results, ""
 
