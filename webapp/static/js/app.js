@@ -212,6 +212,46 @@
             `).join('');
         }
 
+        // 资金流向连续净流入排名
+        const mfEl = document.getElementById('moneyflow-streak');
+        const streakList = data.moneyflow_streak || [];
+        const mfWarning = data.moneyflow_warning || '';
+        let mfHtml = '';
+        if (mfWarning) {
+            mfHtml += `<div class="data-warning">${escapeHtml(mfWarning)}</div>`;
+        }
+        if (streakList.length === 0) {
+            mfHtml += '<div class="empty-state"><p>暂无连续流入板块</p></div>';
+        } else {
+            mfHtml += streakList.map((s, i) => {
+                const netStr = s.recent_net >= 10000
+                    ? (s.recent_net / 10000).toFixed(2) + '亿'
+                    : s.recent_net.toFixed(0) + '万';
+                const totalStr = s.total_net >= 10000
+                    ? (s.total_net / 10000).toFixed(2) + '亿'
+                    : s.total_net.toFixed(0) + '万';
+                const chgClass = s.avg_change >= 0 ? 'up' : 'down';
+                const chgSign = s.avg_change >= 0 ? '+' : '';
+                return `
+                <div class="moneyflow-item">
+                    <span class="rank-num ${i < 3 ? 'top' + (i + 1) : ''}">${i + 1}</span>
+                    <div class="moneyflow-info">
+                        <div class="moneyflow-name">${escapeHtml(s.name)}</div>
+                        <div class="moneyflow-meta">
+                            <span class="moneyflow-streak-badge">${s.streak}日连流</span>
+                            <span>区间净流${s.total_net >= 0 ? '入' : '出'} ${totalStr}</span>
+                            <span class="${chgClass}">均幅${chgSign}${s.avg_change}%</span>
+                        </div>
+                    </div>
+                    <div class="moneyflow-net">
+                        <div class="moneyflow-net-value">${netStr}</div>
+                        <div class="moneyflow-net-label">连续期净流入</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        mfEl.innerHTML = mfHtml;
+
         const diagEl = document.getElementById('weekly-holding-diag');
         if (data.holding_diag.length === 0) {
             diagEl.innerHTML = '<div class="empty-state"><p>暂无持仓，请先添加</p></div>';

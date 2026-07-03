@@ -188,6 +188,94 @@ class TushareMarketReview:
         except Exception:
             return None
 
+    def get_moneyflow_industry_history(self, days: int = 7):
+        """获取最近N个交易日的行业资金流向数据，返回按日期排序的DataFrame"""
+        try:
+            end_date = self.last_trade_date
+            start_date = (datetime.strptime(end_date, '%Y%m%d') - timedelta(days=days * 2 + 5)).strftime('%Y%m%d')
+            df = self.pro.moneyflow_ind_dc(start_date=start_date, end_date=end_date)
+            if df is None or df.empty:
+                return None
+            # 按交易日期排序（旧到新）
+            df = df.sort_values('trade_date')
+            return df
+        except Exception:
+            return None
+
+    def _analyze_moneyflow_streak(self, days: int = 7, min_streak: int = 3):
+        """分析连续净流入的板块，返回排名列表"""
+        df = self.get_moneyflow_industry_history(days)
+        if df is None or df.empty:
+            # 数据获取失败，回退到模拟数据
+            mock_data = [
+                {'name': 'AI算力', 'streak': 5, 'recent_net': 38520.45, 'total_net': 45230.10, 'avg_change': 2.35, 'close': 1258.36, 'days_count': 5},
+                {'name': '商业航天', 'streak': 4, 'recent_net': 28150.20, 'total_net': 32100.80, 'avg_change': 1.98, 'close': 1102.45, 'days_count': 5},
+                {'name': '半导体', 'streak': 3, 'recent_net': 18650.75, 'total_net': 20340.50, 'avg_change': 1.56, 'close': 986.23, 'days_count': 5},
+                {'name': '机器人', 'streak': 3, 'recent_net': 12480.30, 'total_net': 15200.60, 'avg_change': 1.23, 'close': 823.45, 'days_count': 5},
+                {'name': '消费电子', 'streak': 3, 'recent_net': 8320.15, 'total_net': 9850.40, 'avg_change': 0.89, 'close': 712.56, 'days_count': 5},
+            ]
+            return mock_data, "资金流向数据获取失败（网络受限或积分不足），以下为模拟数据展示"
+
+        # 确保有净流入字段
+        net_col = None
+        for col in ['net_amount', 'netflow_amount', 'main_net_amount']:
+            if col in df.columns:
+                net_col = col
+                break
+        if net_col is None:
+            return [], "资金流向数据字段缺失"
+
+        # 取最近 min_streak 个交易日（确保至少能判断连续性）
+        recent_dates = sorted(df['trade_date'].unique())[-(days if days >= min_streak else min_streak):]
+        df_recent = df[df['trade_date'].isin(recent_dates)].copy()
+        df_recent['is_inflow'] = df_recent[net_col].astype(float) > 0
+
+        # 按行业分组，计算连续流入天数、累计净流入、平均涨跌幅
+        results = []
+        name_col = 'name' if 'name' in df_recent.columns else 'industry_name'
+        if name_col not in df_recent.columns:
+            return [], "行业名称字段缺失"
+
+        for name, group in df_recent.groupby(name_col):
+            group = group.sort_values('trade_date')
+            if len(group) < min_streak:
+                continue
+
+            # 计算当前连续净流入天数（从最近一天往前数）
+            streak = 0
+            for _, row in group.iloc[::-1].iterrows():
+                if row['is_inflow']:
+                    streak += 1
+                else:
+                    break
+
+            if streak < min_streak:
+                continue
+
+            # 累计净流入（连续流入期间）
+            recent_inflow = group.iloc[-streak:][net_col].astype(float).sum()
+            # 总净流入（统计区间内）
+            total_net = group[net_col].astype(float).sum()
+            # 平均涨跌幅
+            pct_col = 'pct_change' if 'pct_change' in group.columns else 'pct_chg'
+            avg_chg = float(group[pct_col].astype(float).mean()) if pct_col in group.columns else 0
+            # 最新收盘价
+            close = float(group.iloc[-1].get('close', 0)) if 'close' in group.columns else 0
+
+            results.append({
+                'name': str(name),
+                'streak': streak,
+                'recent_net': round(float(recent_inflow) / 10000, 2),  # 转为万元
+                'total_net': round(float(total_net) / 10000, 2),
+                'avg_change': round(avg_chg, 2),
+                'close': round(close, 2),
+                'days_count': len(group)
+            })
+
+        # 排序：先按连续天数降序，再按连续期间累计净流入降序
+        results.sort(key=lambda x: (x['streak'], x['recent_net']), reverse=True)
+        return results, ""
+
     def daily_review_data(self, holdings: List[Dict]) -> Dict:
         self.last_trade_date = self._get_last_trade_date()
         self.today = datetime.now().strftime('%Y%m%d')
@@ -352,6 +440,9 @@ class TushareMarketReview:
 
         evidence = "数据不足" if data_warning else "根据最新板块数据评估"
 
+        # 资金流向分析：连续3日以上净流入的板块排名
+        moneyflow_streak, mf_warning = self._analyze_moneyflow_streak(days=7, min_streak=3)
+
         return {
             'start_date': start_date,
             'end_date': end_date,
@@ -360,6 +451,8 @@ class TushareMarketReview:
             'lifecycle': {"stage": "观察中", "evidence": evidence},
             'sub_sectors': sub_sectors,
             'holding_diag': holding_diag,
+            'moneyflow_streak': moneyflow_streak,
+            'moneyflow_warning': mf_warning,
             'mock': False,
             'warning': data_warning
         }
@@ -458,6 +551,14 @@ class MockMarketReview:
                 {"name": "医药生物", "stage": "观察"},
             ],
             'holding_diag': holding_diag,
+            'moneyflow_streak': [
+                {'name': 'AI算力', 'streak': 5, 'recent_net': 38520.45, 'total_net': 45230.10, 'avg_change': 2.35, 'close': 1258.36, 'days_count': 5},
+                {'name': '商业航天', 'streak': 4, 'recent_net': 28150.20, 'total_net': 32100.80, 'avg_change': 1.98, 'close': 1102.45, 'days_count': 5},
+                {'name': '半导体', 'streak': 3, 'recent_net': 18650.75, 'total_net': 20340.50, 'avg_change': 1.56, 'close': 986.23, 'days_count': 5},
+                {'name': '机器人', 'streak': 3, 'recent_net': 12480.30, 'total_net': 15200.60, 'avg_change': 1.23, 'close': 823.45, 'days_count': 5},
+                {'name': '消费电子', 'streak': 3, 'recent_net': 8320.15, 'total_net': 9850.40, 'avg_change': 0.89, 'close': 712.56, 'days_count': 5},
+            ],
+            'moneyflow_warning': '',
             'mock': True
         }
 
